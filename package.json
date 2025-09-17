@@ -5,6 +5,10 @@
         "up": "docker compose --env-file .env up -d --build",
         "down": "docker compose down -v",
         "logs": "docker compose logs -f --tail=100",
-        "ps": "docker compose ps"
+        "ps": "docker compose ps",
+        "api:dev": "cd services/api && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+        "worker:dev": "cd services/worker && celery -A worker.app worker -l INFO",
+        "web:dev": "cd web && npm run dev",
+        "dev": "npx concurrently \"npm run api:dev\" \"npm run web:dev\""
     }
 }
