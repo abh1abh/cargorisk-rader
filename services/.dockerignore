@@ -1,0 +1,11 @@
+# services/.dockerignore
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.venv/
+**/.DS_Store
+**/.vscode/
+**/.idea/
+# if you have tests in services/, keep them out of the image
+tests/
