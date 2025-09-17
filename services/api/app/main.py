@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .core.config import settings
 from .routers import upload
 
 app = FastAPI()
@@ -14,6 +15,6 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    return {"status": "ok", "bucket": settings.s3_bucket}
 
 app.include_router(upload.router)
