@@ -1,4 +1,5 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     postgres_host: str
@@ -11,6 +12,13 @@ class Settings(BaseSettings):
     s3_access_key: str
     s3_secret_key: str
     s3_bucket: str
-    class Config: env_file = ".env"
+
+
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",   # prevents the “Extra inputs are not permitted” error
+    )
+
 
 settings = Settings()

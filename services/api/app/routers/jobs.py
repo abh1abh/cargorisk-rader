@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Request
-from celery import Celery
 import os
+
+from celery import Celery
+from fastapi import APIRouter, Request
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 celery = Celery(broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
+
 
 @router.post("/extract/{asset_id}")
 def trigger_extract(asset_id: int, request: Request):

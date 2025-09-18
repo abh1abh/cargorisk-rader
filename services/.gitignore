@@ -7,5 +7,3 @@
 **/.DS_Store
 **/.vscode/
 **/.idea/
-# if you have tests in services/, keep them out of the image
-tests/
