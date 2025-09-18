@@ -1,12 +1,20 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends, Request
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from ..core.deps import get_db
 from ..models import MediaAsset
 from ..core.s3 import get_s3, S3Service
 from ..core.config import settings
+from celery import Celery
+import os
 
 router = APIRouter(prefix="/upload", tags=["upload"])
+
+# Celery client (broker/backend default to local Redis if REDIS_URL not set)
+celery = Celery(
+    broker=os.getenv("REDIS_URL", "redis://redis:6379/0"),
+    backend=os.getenv("REDIS_URL", "redis://redis:6379/0"),
+)
 
 ALLOWED_MIME = {
     "application/pdf",
@@ -16,7 +24,7 @@ ALLOWED_MIME = {
 MAX_BYTES = 50 * 1024 * 1024  # 50 MB
 
 @router.post("", summary="Upload a file to MinIO and register media asset")
-async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="Empty file")
@@ -56,4 +64,14 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
         if not asset:
             raise HTTPException(status_code=500, detail="Hash exists but row not found")
 
+    # Auto-enqueue background extraction after we have a stable asset.id
+    # We send request-id in headers for correlation; worker can read it if task is bound.
+    req_id = request.headers.get("x-request-id")
+    celery.send_task(
+        "extract_metadata",
+        args=[asset.id],
+        headers={"request_id": req_id} if req_id else None,
+    )
+
+    
     return {"id": asset.id, "sha256": digest, "uri": asset.storage_uri}

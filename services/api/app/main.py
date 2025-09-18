@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .routers import upload
+from .routers import jobs
 
 app = FastAPI()
 
@@ -18,3 +19,4 @@ def health():
     return {"status": "ok", "bucket": settings.s3_bucket}
 
 app.include_router(upload.router)
+app.include_router(jobs.router)
