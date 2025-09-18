@@ -4,3 +4,5 @@ npm-debug.log*
 .gitignore
 .vscode
 .DS_Store
+.next
+Dockerfile
