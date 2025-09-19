@@ -1,7 +1,10 @@
 "use client";
 import { useState } from "react";
+
+type UploadResponse = { id: string; sha256: string; uri: string };
+
 export default function Upload() {
-    const [res, setRes] = useState<any>(null);
+    const [res, setRes] = useState<UploadResponse | null>(null);
     const api = process.env.NEXT_PUBLIC_API_URL;
     return (
         <div className="p-6 w-full h-full">
