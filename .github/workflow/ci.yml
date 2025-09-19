@@ -20,8 +20,16 @@ jobs:
             - uses: actions/checkout@v4
             - uses: actions/setup-python@v5
               with: { python-version: "3.11" }
-            - run: pip install -r services/api/requirements.txt
-            - run: pytest -q services/api/tests
-            # - uses: actions/setup-node@v4
-            #   with: { node-version: "20" }
-            # - run: cd web && npm ci && npm run lint
+            - name: Install API deps + dev tools
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r services/requirements.txt
+                  pip install ruff pytest httpx pytest-asyncio
+
+            - name: Lint (Ruff)
+              run: ruff check services/api
+
+            - name: Test (Pytest)
+              env:
+                  PYTHONPATH: ${{ github.workspace }}
+              run: pytest -q services/api/tests
