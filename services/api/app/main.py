@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from .core.deps import get_db
 import boto3
-from sqlalchemy.orm import Session
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from .core.config import settings
+from .core.deps import get_db
 from .routers import jobs, upload
 
 app = FastAPI()
