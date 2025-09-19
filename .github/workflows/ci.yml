@@ -29,6 +29,19 @@ jobs:
             - name: Lint (Ruff)
               run: ruff check services/api
 
+            - name: Configure environment for tests
+              run: |
+                  echo "postgres_host=localhost" >> $GITHUB_ENV
+                  echo "postgres_port=5432" >> $GITHUB_ENV
+                  echo "postgres_db=cargorisk" >> $GITHUB_ENV
+                  echo "postgres_user=app" >> $GITHUB_ENV
+                  echo "postgres_password=app" >> $GITHUB_ENV
+                  echo "redis_url=redis://localhost:6379/0" >> $GITHUB_ENV
+                  echo "s3_endpoint=http://localhost:9000" >> $GITHUB_ENV
+                  echo "s3_access_key=minio" >> $GITHUB_ENV
+                  echo "s3_secret_key=minio123" >> $GITHUB_ENV
+                  echo "s3_bucket=uploads" >> $GITHUB_ENV
+
             - name: Test (Pytest)
               env:
                   PYTHONPATH: ${{ github.workspace }}
