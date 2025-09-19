@@ -29,3 +29,7 @@ python-dotenv
 
 # Migrations
 alembic==1.16.5
+
+# Task Queue
+celery[redis]==5.3.6
+
