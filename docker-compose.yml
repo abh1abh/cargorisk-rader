@@ -7,6 +7,11 @@ services:
             POSTGRES_DB: cargorisk
         ports: ["5432:5432"]
         volumes: ["pgdata:/var/lib/postgresql/data"]
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U app -d cargorisk"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
 
     redis:
         image: redis:7
@@ -21,6 +26,14 @@ services:
         ports: ["9000:9000", "9001:9001"]
         volumes: ["minio:/data"]
 
+    mc:
+        image: minio/mc:latest
+        profiles: ["tools"] # won't start on `up`, only when you run it
+        entrypoint: ["mc"]
+        command: "mc --version"
+        depends_on:
+            - minio
+
     api:
         build:
             context: ./services/api
@@ -28,7 +41,13 @@ services:
         volumes:
             - ./services/api:/app # correct
         env_file: .env
-        depends_on: [postgres, redis, minio]
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_started
+            minio:
+                condition: service_started
         ports: ["8000:8000"]
 
     worker:

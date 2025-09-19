@@ -7,9 +7,10 @@
         "down-v": "docker compose down -v",
         "logs": "docker compose logs -f --tail=100",
         "ps": "docker compose ps",
-        "api:dev": "cd services/api && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
-        "worker:dev": "cd services/worker && celery -A worker.app worker -l INFO",
-        "web:dev": "cd web && npm run dev",
-        "dev": "npx concurrently \"npm run api:dev\" \"npm run web:dev\""
+        "wait:db": "docker compose exec -T postgres bash -lc 'until pg_isready -U app -d cargorisk -h localhost -p 5432; do echo waiting for db; sleep 1; done'",
+        "db:migrate": "docker compose exec -T api alembic upgrade head",
+        "minio:bucket": "docker compose run --rm -T -e MC_HOST_local=http://minio:minio123@minio:9000 mc mb -p local/uploads || true",
+        "health": "curl -v http://localhost:8000/health || exit 1",
+        "bootstrap": "npm run up && npm run wait:db && npm run db:migrate && npm run minio:bucket && npm run health"
     }
 }
