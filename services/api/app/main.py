@@ -18,6 +18,5 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok", "bucket": settings.s3_bucket}
-
 app.include_router(upload.router)
 app.include_router(jobs.router)
