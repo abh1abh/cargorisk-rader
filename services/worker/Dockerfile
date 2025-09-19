@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY worker/ .
+COPY . .
 
 CMD ["celery", "-A", "worker.app", "worker", "-l", "INFO"]

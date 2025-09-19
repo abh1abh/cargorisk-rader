@@ -1,0 +1,20 @@
+# Both in API and Worker
+SQLAlchemy==2.0.43
+psycopg-binary==3.2.10
+pgvector==0.4.1
+boto3==1.40.32
+botocore==1.40.32
+pydantic==2.11.9
+pydantic-settings==2.10.1
+python-dotenv==1.1.1
+
+# Celery + Redis broker
+celery[redis]==5.3.6
+
+# DB (worker updates MediaAsset, etc.)
+SQLAlchemy
+psycopg-binary
+pgvector
+
+# (Optional) S3/MinIO later
+boto3
