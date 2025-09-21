@@ -4,12 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .core.logging import logging_middleware
-
 from .core.config import settings
 from .core.deps import get_db
-from .routers import jobs, upload, documents
+from .core.http_logging import http_logging_middleware
+from .core.logging import setup_logging
+from .routers import documents, jobs, upload
 
+setup_logging()  # before creating app/logging
 app = FastAPI()
 
 app.add_middleware(
@@ -20,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.middleware("http")(logging_middleware)
+app.middleware("http")(http_logging_middleware)
 
 
 @app.get("/health")

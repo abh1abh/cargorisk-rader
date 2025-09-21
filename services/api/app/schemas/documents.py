@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class DocumentOut(BaseModel):
     id: int
     type: str

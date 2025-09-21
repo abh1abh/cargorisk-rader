@@ -1,10 +1,9 @@
 import hashlib
 import io
+
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
-
-from .config import settings
 
 
 class S3Service:

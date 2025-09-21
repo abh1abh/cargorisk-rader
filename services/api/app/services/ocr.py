@@ -1,7 +1,9 @@
 import io
-import pytesseract
+
 import fitz  # PyMuPDF
-from PIL import Image, ImageOps, ImageFilter
+import pytesseract
+from PIL import Image, ImageFilter, ImageOps
+
 
 def _ocr_image(img: Image.Image, lang: str = "eng+nor") -> str:
     # light denoise and contrast enhancement

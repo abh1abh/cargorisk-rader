@@ -1,7 +1,7 @@
 # services/api/app/core/deps.py
+from .config import settings
 from .db import SessionLocal
 from .s3 import S3Service
-from .config import settings
 
 
 def get_db():
