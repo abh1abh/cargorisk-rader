@@ -20,11 +20,24 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    # Adjust column dimension 
     op.execute("ALTER TABLE media_assets ALTER COLUMN embedding TYPE vector(384);")
+
+    # Add index for fast search
+    op.execute("""
+        CREATE INDEX IF NOT EXISTS idx_media_embedding
+        ON media_assets
+        USING ivfflat (embedding vector_l2_ops)
+        WITH (lists = 100);
+    """)
+
 
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    # Revert to 768 dim vector
     op.execute("ALTER TABLE media_assets ALTER COLUMN embedding TYPE vector(768);")
 
+    # Drop index first
+    op.execute("DROP INDEX IF EXISTS idx_media_embedding;")
