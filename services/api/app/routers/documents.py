@@ -10,10 +10,11 @@ from ..core.s3 import S3Service
 from ..models import MediaAsset
 from ..schemas.documents import DocumentOut, DocumentTextOut, OcrRunOut
 from ..services import ocr as ocrsvc
+from ..services.embeddings import embed_text
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-log = get_logger("api.ocr")
+log = get_logger("api.documents")
 
 
 @router.get("/{asset_id}", response_model=DocumentOut)
@@ -77,3 +78,14 @@ def run_ocr(
 
     log.info("ocr_done", extra={"asset_id": asset_id, "chars": len(text or ""), "ms": dt, "mode": mode})
     return OcrRunOut(id=m.id, ocr_chars=len(text or ""))
+
+# @router.post("/{asset_id}/embed")
+# def embed_document(asset_id: int, db: Session = Depends(get_db)):
+#     m = db.get(MediaAsset, asset_id)
+#     if not m:
+#         raise HTTPException(404, "Asset not found")
+#     text = m.ocr_text or ""
+#     emb = embed_text(text)
+#     db.execute(update(MediaAsset).where(MediaAsset.id==asset_id).values(embedding=emb))
+#     db.commit()
+#     return {"id": m.id, "dim": len(emb)}

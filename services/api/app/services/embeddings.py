@@ -1,5 +1,4 @@
 from sentence_transformers import SentenceTransformer
-import numpy as np
 
 _model = None
 def get_model():
