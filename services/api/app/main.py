@@ -4,9 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from .core.logging import logging_middleware
+
 from .core.config import settings
 from .core.deps import get_db
-from .routers import jobs, upload
+from .routers import jobs, upload, documents
 
 app = FastAPI()
 
@@ -17,6 +19,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.middleware("http")(logging_middleware)
 
 
 @app.get("/health")
@@ -47,5 +51,7 @@ def health_s3():
 
 app.include_router(upload.router)
 app.include_router(jobs.router)
+
+app.include_router(documents.router)
 
 

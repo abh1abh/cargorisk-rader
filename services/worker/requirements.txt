@@ -18,3 +18,6 @@ pgvector
 
 # (Optional) S3/MinIO later
 boto3
+
+# Requests
+requests

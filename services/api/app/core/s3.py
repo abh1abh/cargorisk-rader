@@ -1,5 +1,5 @@
 import hashlib
-
+import io
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
@@ -37,17 +37,21 @@ class S3Service:
         except EndpointConnectionError as e:
             raise RuntimeError(f"S3 unreachable: {e}") from e
 
+    def get_object_bytes(self, bucket: str, key: str) -> bytes:
+        buf = io.BytesIO()
+        try:
+            self._s3.download_fileobj(bucket, key, buf)
+        except (ClientError, EndpointConnectionError) as e:
+            raise RuntimeError(f"S3 download_fileobj failed: {e}") from e
+        return buf.getvalue()
+    
+    def get_uri_bytes(self, uri: str) -> bytes:
+        assert uri.startswith("s3://"), f"Unexpected storage uri: {uri}"
+        _, _, rest = uri.partition("s3://")
+        bucket, _, key = rest.partition("/")
+        return self.get_object_bytes(bucket, key)
+
     @staticmethod
     def sha256_bytes(data: bytes) -> str:
         return hashlib.sha256(data).hexdigest()
 
-
-# ---- Lazy singleton getter (no work at import time) ----
-_s3_singleton: S3Service | None = None
-
-
-def get_s3() -> S3Service:
-    global _s3_singleton
-    if _s3_singleton is None:
-        _s3_singleton = S3Service(settings)
-    return _s3_singleton

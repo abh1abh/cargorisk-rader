@@ -5,9 +5,8 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..core.config import settings
-from ..core.deps import get_db
-from ..core.s3 import S3Service, get_s3
+from ..core.deps import get_db, provide_s3, provide_default_bucket
+from ..core.s3 import S3Service
 from ..models import MediaAsset
 
 router = APIRouter(prefix="/upload", tags=["upload"])
@@ -30,7 +29,13 @@ MAX_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("", summary="Upload a file to MinIO and register media asset")
-async def upload(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload(
+    request: Request, 
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db),
+    s3: S3Service = Depends(provide_s3),
+    bucket: str = Depends(provide_default_bucket),
+):
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="Empty file")
@@ -44,12 +49,10 @@ async def upload(request: Request, file: UploadFile = File(...), db: Session = D
     digest = S3Service.sha256_bytes(data)
     key = f"{digest[:2]}/{digest}"
 
-    s3 = get_s3()
-
     # Write to S3 if missing
     try:
-        if not s3.object_exists(settings.s3_bucket, key):
-            s3.put_bytes(settings.s3_bucket, key, data, content_type)
+        if not s3.object_exists(bucket, key):
+            s3.put_bytes(bucket, key, data, content_type)
     except RuntimeError as e:
         # Surface clear 502 if MinIO is down/misconfigured
         raise HTTPException(status_code=502, detail=str(e)) from e
@@ -57,7 +60,7 @@ async def upload(request: Request, file: UploadFile = File(...), db: Session = D
     try:
         asset = MediaAsset(
             type=content_type,
-            storage_uri=f"s3://{settings.s3_bucket}/{key}",
+            storage_uri=f"s3://{bucket}/{key}",
             sha256=digest,
         )
         db.add(asset)
@@ -77,5 +80,8 @@ async def upload(request: Request, file: UploadFile = File(...), db: Session = D
         args=[asset.id],
         headers={"request_id": req_id} if req_id else None,
     )
+
+    celery.send_task("ocr_asset", args=[asset.id])
+
 
     return {"id": asset.id, "sha256": digest, "uri": asset.storage_uri}

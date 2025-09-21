@@ -1,4 +1,4 @@
-import os
+import os, requests
 from celery import Celery
 CELERY_BROKER = os.getenv("REDIS_URL","redis://redis:6379/0")
 app = Celery("cargorisk", broker=CELERY_BROKER, backend=CELERY_BROKER)
@@ -15,3 +15,10 @@ def extract_metadata(self, asset_id: int):
     logging.getLogger().setLevel("INFO")
     time.sleep(2) # placeholder work
     return {"asset_id": asset_id, "status": "done"}
+
+@app.task(name="ocr_asset")
+def ocr_asset(asset_id: int):
+    base = os.getenv("API_BASE", "http://api:8000")
+    r = requests.post(f"{base}/documents/{asset_id}/ocr", timeout=120)
+    r.raise_for_status()
+    return r.json()
