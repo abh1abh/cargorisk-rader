@@ -39,3 +39,6 @@ pymupdf==1.24.10
 Pillow==10.4.0
 numpy==2.1.0
 
+# Embedding 
+sentence-transformers==3.0.1
+torch==2.3.1

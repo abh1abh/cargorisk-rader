@@ -12,7 +12,7 @@ class MediaAsset(Base):
     storage_uri = Column(String, nullable=False)
     sha256 = Column(String, nullable=False, unique=True)
     ocr_text = Column(String)
-    embedding = Column(Vector(768))  # open up vector search later
+    embedding = Column(Vector(384))  # open up vector search later
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
