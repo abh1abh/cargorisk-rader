@@ -10,7 +10,8 @@ from ..core.s3 import S3Service
 from ..models import MediaAsset
 from ..schemas.documents import DocumentOut, DocumentTextOut, OcrRunOut
 from ..services import ocr as ocrsvc
-from ..services.embeddings import embed_text
+
+# from ..services.embeddings import embed_text
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
