@@ -8,7 +8,7 @@ from .core.config import settings
 from .core.deps import get_db
 from .core.http_logging import http_logging_middleware
 from .core.logging import setup_logging
-from .routers import documents, jobs, upload
+from .routers import documents, jobs, search, upload
 
 setup_logging()  # before creating app/logging
 app = FastAPI()
@@ -54,5 +54,8 @@ app.include_router(upload.router)
 app.include_router(jobs.router)
 
 app.include_router(documents.router)
+
+app.include_router(search.router)
+
 
 

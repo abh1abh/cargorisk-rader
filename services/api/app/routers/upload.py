@@ -1,6 +1,6 @@
 import os
 
-from celery import Celery
+from celery import Celery, chain
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -97,14 +97,16 @@ async def upload(
     # We send request-id in headers for correlation; worker can read it if task is bound.
     req_id = request_id_ctx.get()          # <-- instead of request.headers.get("x-request-id")
     headers = {"request_id": req_id} 
-    celery.send_task(
-        "extract_metadata",
-        args=[asset.id],
-        headers=headers,
-    )
-    celery.send_task("ocr_asset", args=[asset.id], headers=headers)
-    
-    log.info("upload_tasks_enqueued", extra={"asset_id": asset.id, "tasks": ["extract_metadata", "ocr_asset"]})
+
+    # Keep extract_metadata in parallel (optional), but chain OCR -> EMBED
+    celery.send_task("extract_metadata", args=[asset.id], headers=headers)
+
+    # Ensure the worker has tasks named ocr_asset and embed_asset
+    workflow = chain(
+        celery.signature("ocr_asset", args=[asset.id], headers=headers),
+        celery.signature("embed_asset", args=[asset.id], headers=headers, immutable=True),
+    )   
+    workflow.apply_async()
 
     dt = round(now_ms() - t0, 2)
     log.info("upload_done", extra={"asset_id": asset.id, "ms": dt})
