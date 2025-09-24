@@ -1,5 +1,6 @@
 import hashlib
 import io
+from urllib.parse import urlparse
 
 import boto3
 from botocore.client import Config
@@ -50,6 +51,21 @@ class S3Service:
         bucket, _, key = rest.partition("/")
         return self.get_object_bytes(bucket, key)
 
+    def parse_s3_uri(self, uri: str) -> tuple[str, str]:
+        try:
+            p = urlparse(uri)
+            if not p.scheme or not p.netloc or not p.path:
+                raise RuntimeError(f"Invalid S3 URI: {uri}")
+            return p.netloc, p.path.lstrip("/")
+        except Exception as e:
+            raise RuntimeError(f"Failed to parse S3 URI: {uri}") from e
+
+    def generate_presigned_url(self, client_method: str, params: dict, expires_in: int = 3600) -> str:
+        try:
+            url = self._s3.generate_presigned_url(client_method, Params=params, ExpiresIn=expires_in)
+            return url
+        except Exception as e:
+            raise RuntimeError(f"S3 generate_presigned_url failed: {e}") from e
     @staticmethod
     def sha256_bytes(data: bytes) -> str:
         return hashlib.sha256(data).hexdigest()

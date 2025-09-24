@@ -2,6 +2,7 @@ from typing import Annotated
 
 from botocore.exceptions import ClientError, EndpointConnectionError
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
@@ -99,3 +100,32 @@ def embed_document(asset_id: int, db: Session = Depends(get_db)):
     db.execute(update(MediaAsset).where(MediaAsset.id==asset_id).values(embedding=emb))
     db.commit()
     return {"id": m.id, "dim": len(emb)}
+
+@router.get("/{id}/download", include_in_schema=False)
+def download_original(id: int, s3: S3Service = Depends(provide_s3), db: Session = Depends(get_db)):
+    media_asset = db.get(MediaAsset, id)
+    if not media_asset or not media_asset.storage_uri:
+        raise HTTPException(status_code=404, detail="Document not found")
+    print("HEARRRR")
+    bucket, key = s3.parse_s3_uri(media_asset.storage_uri)
+    print(bucket, key)
+
+    try:
+        url = s3.generate_presigned_url(
+            "get_object",
+            params={
+                "Bucket": bucket,
+                "Key": key,
+                # Optional: force inline view + content type if PDFs
+                # "ResponseContentDisposition": "inline",
+                # "ResponseContentType": "application/pdf",
+            },
+            expires_in=600,  # 10 minutes
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    public_base = "http://localhost:9000"  # or settings.s3_public_endpoint
+    url = url.replace("http://minio:9000", public_base)
+    # 307 so browsers follow with GET
+    return RedirectResponse(url, status_code=307)
