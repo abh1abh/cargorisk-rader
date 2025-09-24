@@ -4,8 +4,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ..core.deps import get_db
+from ..core.logging import get_logger
 from ..services.embeddings import embed_text
-from ..core.logging import get_logger, now_ms, request_id_ctx
 
 log = get_logger("api.search")
 

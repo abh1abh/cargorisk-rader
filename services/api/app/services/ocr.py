@@ -2,8 +2,9 @@ import io
 
 import fitz  # PyMuPDF
 import pytesseract
-from PIL import Image, ImageFilter, ImageOps
 from openpyxl import load_workbook
+from PIL import Image, ImageFilter, ImageOps
+
 
 def _ocr_image(img: Image.Image, lang: str = "eng+nor") -> str:
     # light denoise and contrast enhancement

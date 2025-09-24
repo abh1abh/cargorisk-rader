@@ -123,7 +123,7 @@ def download_original(id: int, s3: S3Service = Depends(provide_s3), db: Session 
             expires_in=600,  # 10 minutes
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     public_base = "http://localhost:9000"  # or settings.s3_public_endpoint
     url = url.replace("http://minio:9000", public_base)
