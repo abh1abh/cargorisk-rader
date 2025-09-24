@@ -21,13 +21,19 @@ celery = Celery(
     backend=os.getenv("REDIS_URL", "redis://redis:6379/0"),
 )
 
+# add to ALLOWED_MIME
 ALLOWED_MIME = {
     "application/pdf",
     "image/png",
     "image/jpeg",
     "image/webp",
     "image/tiff",
+    # spreadsheets
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+    "application/vnd.ms-excel.sheet.macroEnabled.12",    
+    "text/csv",  # optional
 }
+
 
 MAX_BYTES = 50 * 1024 * 1024  # 50 MB
 

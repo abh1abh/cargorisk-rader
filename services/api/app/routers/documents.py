@@ -13,8 +13,6 @@ from ..schemas.documents import DocumentOut, DocumentTextOut, OcrRunOut
 from ..services import ocr as ocrsvc
 from ..services.embeddings import embed_text
 
-# from ..services.embeddings import embed_text
-
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 log = get_logger("api.documents")
@@ -57,13 +55,22 @@ def run_ocr(
     except (ClientError, EndpointConnectionError) as e:
         log.warning("s3_error", extra={"asset_id": asset_id, "error": e.__class__.__name__})
         raise HTTPException(status_code=502, detail=f"S3 error: {e.__class__.__name__}") from e
+    
     try:
-        if (m.type or "").startswith("image/"):
+        mime = m.type or ""
+
+        if mime.startswith("image/"):
             text = ocrsvc.image_bytes_to_text(blob, lang=lang or "eng+nor")
             mode = "image"
-        elif m.type == "application/pdf":
+        elif mime == "application/pdf":
             text = ocrsvc.pdf_bytes_to_text(blob, lang=lang or "eng+nor")
             mode = "pdf"
+        elif mime in {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+            "application/vnd.ms-excel.sheet.macroEnabled.12",  # .xlsm
+            }:
+            text = ocrsvc.xlsx_bytes_to_text(blob)
+            mode = "xlsx"
         else:
             try:
                 text = ocrsvc.pdf_bytes_to_text(blob)
