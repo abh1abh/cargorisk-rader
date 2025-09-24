@@ -15,7 +15,7 @@ EMBED_DIM = 384  # keep in sync with your model
 
 
 @router.get("")
-def search(q: str = Query(...), k: int = 5, db: Session = Depends(get_db)):
+def search(q: str = Query(...), limit: int = 5, offset: int = 0, db: Session = Depends(get_db)):
     emb = embed_text(q)
 
     if EMBED_DIM and len(emb) != EMBED_DIM:
@@ -29,16 +29,32 @@ def search(q: str = Query(...), k: int = 5, db: Session = Depends(get_db)):
         SELECT id,
                storage_uri,
                LEFT(COALESCE(ocr_text,''), 200) AS snippet,
-               (embedding <-> :qvec)::float AS distance
+               (embedding <-> :qvec)::float AS distance,
+               COUNT(*) OVER() AS total
         FROM media_assets
         WHERE embedding IS NOT NULL
         ORDER BY embedding <-> :qvec
-        LIMIT :k
+        LIMIT :limit
+        OFFSET :offset
     """)
-    rows = db.execute(sql, {"qvec": qvec, "k": k}).mappings().all()
+    rows = db.execute(sql, {"qvec": qvec, "limit": limit, "offset": offset}).mappings().all()
     if not rows:
         # one-time brute-force fallback
         db.execute(text("SET LOCAL enable_indexscan = off"))
         db.execute(text("SET LOCAL enable_bitmapscan = off"))
-        rows = db.execute(sql, {"qvec": qvec, "k": k}).mappings().all()    
-    return {"query": q, "results": [dict(r) for r in rows]}
+        rows = db.execute(sql, {"qvec": qvec, "limit": limit, "offset": offset}).mappings().all()
+    if rows:
+        print(rows[0].keys())
+
+    total = rows[0]["total"] if rows else 0
+
+    results = [
+        {
+            "id": r["id"],
+            "storage_uri": r["storage_uri"],
+            "snippet": r["snippet"],
+            "distance": r["distance"],
+        } for r in rows
+    ]
+
+    return {"query": q, "results": results, "total": total}
