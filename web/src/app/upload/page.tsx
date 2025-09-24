@@ -33,8 +33,9 @@ export default function Upload() {
                 throw new Error(msg || `HTTP ${r.status}`);
             }
             setResult(await r.json());
-        } catch (e: any) {
-            if (e?.name !== "AbortError") setErr(e?.message || "Upload failed");
+        } catch (e) {
+            const error = e as Error;
+            if (error?.name !== "AbortError") setErr(error?.message || "Upload failed");
         } finally {
             setBusy(false);
         }

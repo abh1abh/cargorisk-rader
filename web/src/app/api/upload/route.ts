@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { api } from "@/lib/api"; // safe here, server-only
 
 // API route for /api/search (proxy to FastAPI /search)
 export async function POST(req: NextRequest) {
@@ -19,7 +18,10 @@ export async function POST(req: NextRequest) {
             const text = await response.text();
             return NextResponse.json({ error: text }, { status: response.status });
         }
-    } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+            return NextResponse.json({ error: err.message }, { status: 500 });
+        }
+        return NextResponse.json({ error: "Unknown error" }, { status: 500 });
     }
 }
