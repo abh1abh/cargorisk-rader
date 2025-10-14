@@ -1,0 +1,45 @@
+import os
+import shutil
+import httpx
+import pytest
+
+@pytest.fixture(scope="session")
+def tesseract_available():
+    return shutil.which("tesseract") is not None
+
+def pytest_collection_modifyitems(config, items):
+    # Skip @e2e unless -k e2e is explicitly requested
+    k = config.getoption("-k") or ""
+    if "e2e" not in k:
+        skip_e2e = pytest.mark.skip(reason="Skipping e2e by default; run with -k e2e")
+        for item in items:
+            if "e2e" in item.keywords:
+                item.add_marker(skip_e2e)
+
+
+@pytest.fixture(scope="session")
+def wait_for_api():
+    """Wait for /health up to ~60s; skip e2e if not available."""
+    if httpx is None:
+        pytest.skip("httpx not installed; skipping e2e")
+    url = f"{BASE}/health"
+    for _ in range(60):
+        try:
+            r = httpx.get(url, timeout=2.0)
+            if r.status_code == 200:
+                return
+        except Exception:
+            pass
+        time.sleep(1)
+    pytest.skip("API not reachable at /health; skipping e2e")
+
+@pytest.fixture(scope="session")
+def ensure_seed(wait_for_api):
+    """Create & embed a tiny doc so search has something to find."""
+    content = b"Hello seed content for vector search :: cargorisk-seed-v1"
+    f = {'file': ('seed.txt', content, 'text/plain')}
+    r = httpx.post(f"{BASE}/upload", files=f, timeout=20)
+    r.raise_for_status()
+    asset_id = r.json()['id']
+    httpx.post(f"{BASE}/documents/{asset_id}/embed", timeout=60).raise_for_status()
+    return asset_id

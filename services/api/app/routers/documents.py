@@ -13,6 +13,7 @@ from ..models import MediaAsset
 from ..schemas.documents import DocumentOut, DocumentTextOut, OcrRunOut
 from ..services import ocr as ocrsvc
 from ..services.embeddings import embed_text
+from ..core.metrics import timed
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -44,7 +45,7 @@ def run_ocr(
     lang: Annotated[str | None, Query(description="Tesseract language(s), e.g. 'eng+nor'")] = None,
 
 ):
-    t0 = now_ms()
+    time = timed("ocr")
     m = db.get(MediaAsset, asset_id)
     if not m:
         raise HTTPException(404, "Not found")
@@ -85,13 +86,14 @@ def run_ocr(
 
     m.ocr_text = text
     db.commit()
-    dt = round(now_ms() - t0, 2)
+    ms = time({"asset_id": asset_id})
 
-    log.info("ocr_done", extra={"asset_id": asset_id, "chars": len(text or ""), "ms": dt, "mode": mode})
+    log.info("ocr_done", extra={"asset_id": asset_id, "chars": len(text or ""), "mode": mode})
     return OcrRunOut(id=m.id, ocr_chars=len(text or ""))
 
 @router.post("/{asset_id}/embed")
 def embed_document(asset_id: int, db: Session = Depends(get_db)):
+    time = timed("embed")
     m = db.get(MediaAsset, asset_id)
     if not m:
         raise HTTPException(404, "Asset not found")
@@ -99,6 +101,7 @@ def embed_document(asset_id: int, db: Session = Depends(get_db)):
     emb = embed_text(text)
     db.execute(update(MediaAsset).where(MediaAsset.id==asset_id).values(embedding=emb))
     db.commit()
+    ms = time({"asset_id": asset_id, "chars": len(text), "dim": len(emb)})
     return {"id": m.id, "dim": len(emb)}
 
 @router.get("/{id}/download", include_in_schema=False)
