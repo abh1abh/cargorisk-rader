@@ -131,7 +131,7 @@ jobs:
 
       # Run tests via your 'test' service (profile)
       - name: Run e2e tests (compose test service)
-        run: docker compose --profile test run --rm test
+        run: docker compose run --rm test
 
       # Logs on failure + teardown
       - name: Dump compose logs (on failure)
