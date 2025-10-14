@@ -39,9 +39,22 @@ def wait_for_api():
 
 @pytest.fixture(scope="session")
 def ensure_seed(wait_for_api):
-    """Create & embed a tiny doc so search has something to find."""
-    content = b"Hello seed content for vector search :: cargorisk-seed-v1"
-    f = {'file': ('seed.txt', content, 'application/pdf')}
+    # Create & embed a tiny doc so search has something to find.
+    pdf_bytes = (
+        b"%PDF-1.4\n1 0 obj <<>> endobj\n"
+        b"2 0 obj << /Type /Catalog /Pages 3 0 R >> endobj\n"
+        b"3 0 obj << /Type /Pages /Kids [4 0 R] /Count 1 >> endobj\n"
+        b"4 0 obj << /Type /Page /Parent 3 0 R /MediaBox [0 0 200 200] >> endobj\n"
+        b"5 0 obj << /Length 44 >> stream\n"
+        b"BT /F1 12 Tf 72 120 Td (Hello seed content) Tj ET\n"
+        b"endstream endobj\n"
+        b"xref\n0 6\n0000000000 65535 f \n"
+        b"0000000010 00000 n \n0000000053 00000 n \n0000000101 00000 n \n"
+        b"0000000167 00000 n \n0000000290 00000 n \n"
+        b"trailer << /Size 6 /Root 2 0 R >>\nstartxref\n360\n%%EOF"
+    )
+
+    f = {'file': ('seed.pdf', pdf_bytes, 'application/pdf')}
     r = httpx.post(f"{BASE}/upload", files=f, timeout=20)
     r.raise_for_status()
     asset_id = r.json()['id']
