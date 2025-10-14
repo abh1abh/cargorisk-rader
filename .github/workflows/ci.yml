@@ -69,6 +69,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+
       - name: Create .env for compose
         run: |
           cat > .env << 'EOF'
@@ -87,6 +88,11 @@ jobs:
           s3_access_key=minio
           s3_secret_key=minio123
           s3_bucket=uploads
+
+      - name: Create .env for web
+        run: |
+          cat > web/.env.docker << 'EOF'
+          INTERNAL_API_URL=http://api:8000
 
       # Build & start your compose stack
       - name: Compose Docker
