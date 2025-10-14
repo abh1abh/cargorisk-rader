@@ -62,3 +62,67 @@ jobs:
         run: |
           npm i -D prettier eslint-config-prettier
           npm run lint
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    # Startng MinIO here so it's fresh for the e2e tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      # Build & start your compose stack
+      - name: Compose Docker
+        run: |
+          docker compose -d --build
+
+      # Create the S3 bucket in MinIO using your bundled `mc` service (profile: tools)
+      - name: Wait for services to be healthy
+        run: |
+          # Run mc container with env pointing to the running minio
+            docker run --rm --network host \
+              -e MC_HOST_minio=http://minio:minio123@localhost:9000 \
+              minio/mc:latest mb --ignore-existing minio/uploads
+            # sanity-list
+            docker run --rm --network host \
+              -e MC_HOST_minio=http://minio:minio123@localhost:9000 \
+              minio/mc:latest ls minio
+
+      # Wait for API /health to be ready
+      - name: Wait for API /health
+        run: |
+          for i in {1..90}; do
+            if curl -fsS http://localhost:8000/health >/dev/null; then
+              echo "API is up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "API did not become healthy" >&2
+          docker compose logs api
+          exit 1
+
+      # Install test deps on the runner (pytest etc.)
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install pytest deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r services/api/requirements.txt
+          pip install pytest httpx pytest-asyncio
+
+      # Run only e2e tests against the running API at localhost:8000
+      - name: Run e2e tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          BASE: http://localhost:8000
+        run: pytest -q services/api/tests -k "e2e"
+
+      # Always capture logs on failure
+      - name: Dump compose logs (on failure)
+        if: failure()
+        run: docker compose logs --no-color > compose-logs.txt || true
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-logs
+          path: compose-logs.txt

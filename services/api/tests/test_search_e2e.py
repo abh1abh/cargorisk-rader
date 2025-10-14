@@ -17,9 +17,8 @@ BASE = os.getenv("BASE", "http://localhost:8000")
 
 @pytest.mark.e2e
 def test_embed_and_search_e2e(ensure_seed):
-    s = httpx.get(f"{BASE}/search?q=Hello", timeout=15).json()
-    s.raise_for_status()
-    data = s.json()
-    assert "results" in data, "Missing 'results' key in /search response"
-    assert any("Hello" in (r.get("text", "") or "") for r in data["results"]), \
-        "No expected text found in search results"
+    r = httpx.get(f"{BASE}/search?q=Hello", timeout=15)
+    r.raise_for_status()
+    data = r.json()
+    assert "results" in data
+    assert any("Hello" in (row.get("text") or "") for row in data["results"])
