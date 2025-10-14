@@ -69,6 +69,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+      - name: Create .env for compose
+        run: |
+          cat > .env << 'EOF'
+          # DB
+          postgres_host=postgres
+          postgres_port=5432
+          postgres_db=cargorisk
+          postgres_user=app
+          postgres_password=app
+
+          # Redis
+          redis_url=redis://redis:6379/0
+
+          # S3 / MinIO
+          s3_endpoint=http://minio:9000
+          s3_access_key=minio
+          s3_secret_key=minio123
+          s3_bucket=uploads
 
       # Build & start your compose stack
       - name: Compose Docker
@@ -82,10 +100,6 @@ jobs:
             docker run --rm --network host \
               -e MC_HOST_minio=http://minio:minio123@localhost:9000 \
               minio/mc:latest mb --ignore-existing minio/uploads
-            # sanity-list
-            docker run --rm --network host \
-              -e MC_HOST_minio=http://minio:minio123@localhost:9000 \
-              minio/mc:latest ls minio
 
       # Wait for API /health to be ready
       - name: Wait for API /health
