@@ -20,7 +20,6 @@ def test_embed_and_search_e2e(ensure_seed):
     r = httpx.get(f"{BASE}/search?q=Hello", timeout=15)
     r.raise_for_status()
     data = r.json()
-    results = data["results"]
-    assert len(results) >= 1, f"Expected at least one search hit, got: {data}"
-    assert any("Hello" in (row.get("snippet") or row.get("text") or "") for row in results), \
-        f"No 'Hello' in results; first result: {results[0] if results else '[]'}"
+    results = data.get("results", [])
+    assert len(results) >= 1, f"No results: {data}"
+    assert any("Hello" in (r.get("snippet") or "") for r in results), f"No 'Hello' in snippets: {results}"
