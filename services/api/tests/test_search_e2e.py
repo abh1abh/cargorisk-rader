@@ -22,5 +22,5 @@ def test_embed_and_search_e2e(ensure_seed):
     data = r.json()
     results = data["results"]
     assert len(results) >= 1, f"Expected at least one search hit, got: {data}"
-    assert any("Hello" in ((row.get("snippet") or row.get("text") or "")) for row in results), \
+    assert any("Hello" in (row.get("snippet") or row.get("text") or "") for row in results), \
         f"No 'Hello' in results; first result: {results[0] if results else '[]'}"
