@@ -93,6 +93,13 @@ jobs:
 
           EOF
 
+      - name: Create .env for web
+        run: |
+          cat > web/.env.docker << 'EOF'
+          INTERNAL_API_URL=http://api:8000
+
+          EOF
+
       # Build & start your compose stack
       - name: Compose Docker
         run: |
