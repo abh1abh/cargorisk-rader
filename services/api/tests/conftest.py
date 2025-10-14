@@ -59,8 +59,7 @@ def ensure_seed(wait_for_api):
         )
     }
 
-    f = {'file': ('seed.png', files, 'image/png')}
-    r = httpx.post(f"{BASE}/upload", files=f, timeout=20)
+    r = httpx.post(f"{BASE}/upload", files=files, timeout=20)
     r.raise_for_status()
     asset_id = r.json()['id']
 

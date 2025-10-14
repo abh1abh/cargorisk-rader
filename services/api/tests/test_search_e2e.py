@@ -19,14 +19,12 @@ BASE = os.getenv("BASE", "http://localhost:8000")
 def test_embed_and_search_e2e(ensure_seed):
     asset_id = ensure_seed
 
-    # 1) Sanity: OCR actually produced text
+     # 1) Text was extracted
     t = httpx.get(f"{BASE}/documents/{asset_id}/text", timeout=15).json()
-    assert "hello" in (t.get("text") or "").lower(), f"OCR text missing 'hello': {t}"
+    assert "hello" in (t.get("text") or "").lower(), f"text missing 'hello': {t}"
 
-
-    r = httpx.get(f"{BASE}/search?q=Hello", timeout=15)
-    r.raise_for_status()
+    # 2) Asset appears in semantic search
+    r = httpx.get(f"{BASE}/search?q=Hello", timeout=15); r.raise_for_status()
     data = r.json()
-    results = data.get("results", [])
-    assert len(results) >= 1, f"No results: {data}"
-    assert any("hello" in (r.get("snippet") or "").lower() for r in results), f"No 'hello' in snippets: {results}"
+    ids = [row.get("id") for row in data.get("results", [])]
+    assert asset_id in ids, f"Seeded asset {asset_id} not in results: {ids}"
