@@ -5,7 +5,7 @@ import time
 
 import httpx
 import pytest
-from PIL import Image, ImageDraw
+from openpyxl import Workbook
 
 BASE = os.getenv("BASE", "http://localhost:8000")
 
@@ -42,20 +42,24 @@ def wait_for_api():
 @pytest.fixture(scope="session")
 def ensure_seed(wait_for_api):
     # Create & embed a tiny doc so search has something to find.
-    # Generate an in-memory PNG with the text "Hello"
-    base = Image.new("L", (260, 70), color=255) 
-    d = ImageDraw.Draw(base)
-    text = "HELLO SEED CONTENT"
-    x, y = 8, 20
-    for dx, dy in [(0,0),(1,0),(0,1),(1,1),(-1,0),(0,-1)]:  # thicken strokes
-        d.text((x+dx, y+dy), text, fill=0)
-    # Upscale 4x with NEAREST to avoid blur (improves OCR a lot)
-    img = base.resize((base.width*4, base.height*4), resample=Image.NEAREST)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    ws["A1"] = "Hello seed content"
+    ws["B2"] = "Cargorisk test"
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    png_bytes = buf.getvalue()
+    wb.save(buf)
+    xlsx_bytes = buf.getvalue()
 
-    f = {'file': ('seed.png', png_bytes, 'image/png')}
+    files = {
+        'file': (
+            'seed.xlsx',
+            xlsx_bytes,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    }
+
+    f = {'file': ('seed.png', files, 'image/png')}
     r = httpx.post(f"{BASE}/upload", files=f, timeout=20)
     r.raise_for_status()
     asset_id = r.json()['id']
