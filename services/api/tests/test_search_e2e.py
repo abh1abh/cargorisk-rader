@@ -1,4 +1,5 @@
 import os
+
 import httpx
 import pytest
 
@@ -21,4 +22,4 @@ def test_embed_and_search_e2e(ensure_seed):
     data = s.json()
     assert "results" in data, "Missing 'results' key in /search response"
     assert any("Hello" in (r.get("text", "") or "") for r in data["results"]), \
-        f"No expected text found in search results"
+        "No expected text found in search results"

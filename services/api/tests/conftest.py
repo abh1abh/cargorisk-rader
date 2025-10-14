@@ -1,7 +1,11 @@
 import os
 import shutil
+import time
+
 import httpx
 import pytest
+
+BASE = os.getenv("BASE", "http://localhost:8000")
 
 @pytest.fixture(scope="session")
 def tesseract_available():

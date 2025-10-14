@@ -7,13 +7,13 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from ..core.deps import get_db, provide_s3
-from ..core.logging import get_logger, now_ms
+from ..core.logging import get_logger
+from ..core.metrics import timed
 from ..core.s3 import S3Service
 from ..models import MediaAsset
 from ..schemas.documents import DocumentOut, DocumentTextOut, OcrRunOut
 from ..services import ocr as ocrsvc
 from ..services.embeddings import embed_text
-from ..core.metrics import timed
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -86,7 +86,7 @@ def run_ocr(
 
     m.ocr_text = text
     db.commit()
-    ms = time({"asset_id": asset_id})
+    time({"asset_id": asset_id})
 
     log.info("ocr_done", extra={"asset_id": asset_id, "chars": len(text or ""), "mode": mode})
     return OcrRunOut(id=m.id, ocr_chars=len(text or ""))
@@ -101,7 +101,7 @@ def embed_document(asset_id: int, db: Session = Depends(get_db)):
     emb = embed_text(text)
     db.execute(update(MediaAsset).where(MediaAsset.id==asset_id).values(embedding=emb))
     db.commit()
-    ms = time({"asset_id": asset_id, "chars": len(text), "dim": len(emb)})
+    time({"asset_id": asset_id, "chars": len(text), "dim": len(emb)})
     return {"id": m.id, "dim": len(emb)}
 
 @router.get("/{id}/download", include_in_schema=False)
