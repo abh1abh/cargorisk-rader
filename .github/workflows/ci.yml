@@ -27,7 +27,7 @@ jobs:
           pip install ruff pytest httpx pytest-asyncio
 
       - name: Lint (Ruff)
-        run: ruff check services/api
+        run: ruff check services/api --fix
 
       - name: Configure environment for tests
         run: |

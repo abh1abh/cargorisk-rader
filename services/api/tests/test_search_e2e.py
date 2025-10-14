@@ -22,4 +22,4 @@ def test_embed_and_search_e2e(ensure_seed):
     data = r.json()
     results = data.get("results", [])
     assert len(results) >= 1, f"No results: {data}"
-    assert any("Hello" in (r.get("snippet") or "") for r in results), f"No 'Hello' in snippets: {results}"
+    assert any("hello" in (r.get("snippet") or "").lower() for r in results), f"No 'hello' in snippets: {results}"

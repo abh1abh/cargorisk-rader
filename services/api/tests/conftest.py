@@ -43,9 +43,14 @@ def wait_for_api():
 def ensure_seed(wait_for_api):
     # Create & embed a tiny doc so search has something to find.
     # Generate an in-memory PNG with the text "Hello"
-    img = Image.new("RGB", (200, 80), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    draw.text((10, 25), "Hello seed content", fill=(0, 0, 0))
+    base = Image.new("L", (260, 70), color=255) 
+    d = ImageDraw.Draw(base)
+    text = "HELLO SEED CONTENT"
+    x, y = 8, 20
+    for dx, dy in [(0,0),(1,0),(0,1),(1,1),(-1,0),(0,-1)]:  # thicken strokes
+        d.text((x+dx, y+dy), text, fill=0)
+    # Upscale 4x with NEAREST to avoid blur (improves OCR a lot)
+    img = base.resize((base.width*4, base.height*4), resample=Image.NEAREST)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     png_bytes = buf.getvalue()
@@ -54,7 +59,7 @@ def ensure_seed(wait_for_api):
     r = httpx.post(f"{BASE}/upload", files=f, timeout=20)
     r.raise_for_status()
     asset_id = r.json()['id']
-    
+
     httpx.post(f"{BASE}/documents/{asset_id}/ocr", timeout=60).raise_for_status()
     httpx.post(f"{BASE}/documents/{asset_id}/embed", timeout=60).raise_for_status()
     return asset_id
