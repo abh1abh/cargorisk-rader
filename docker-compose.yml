@@ -65,6 +65,32 @@ services:
     depends_on: [api]
     ports: ["3000:3000"]
 
+  test:
+    profiles: ["test", "tools"] # won't start on `up`, only when you run it
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_started
+    volumes:
+      - ./:/workspace:ro
+    working_dir: /workspace
+    environment:
+      PYTHONPATH: /workspace
+    # Wait for API /health to be ready, install test deps, then run pytest
+    entrypoint: ["/bin/sh", "-lc"]
+    command: >
+      '
+      echo "Installing test dependencies...";
+
+      pip install --no-cache-dir pytest httpx pytest-asyncio;
+
+      echo "Running e2e tests...";
+      BASE=http://api:8000 pytest -q services/api/tests -k "e2e";
+      '
+
 volumes:
   pgdata:
   minio:

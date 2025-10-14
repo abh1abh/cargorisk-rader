@@ -3,23 +3,30 @@ import os
 
 import httpx
 import pytest
-from PIL import Image, ImageDraw
+from openpyxl import Workbook
 
 BASE = os.getenv("BASE", "http://localhost:8000")
 
 @pytest.mark.e2e
-def test_upload_and_ocr_e2e(tesseract_available):
+def test_upload_e2e(tesseract_available):
     # create a simple text file
-    # Generate an in-memory PNG with the text "Hello"
-    img = Image.new("RGB", (200, 80), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    draw.text((10, 25), "Hello seed content", fill=(0, 0, 0))
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    ws["A1"] = "Hello seed content"
+    ws["B2"] = "Cargorisk test"
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    png_bytes = buf.getvalue()
+    wb.save(buf)
+    xlsx_bytes = buf.getvalue()
 
-    f = {'file': ('hello.png', png_bytes, 'image/png')}
-    r = httpx.post(f"{BASE}/upload", files=f, timeout=30)
+    files = {
+        'file': (
+            'seed.xlsx',
+            xlsx_bytes,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    }
+    r = httpx.post(f"{BASE}/upload", files=files, timeout=30)
     r.raise_for_status()
     asset_id = r.json()['id']
 
