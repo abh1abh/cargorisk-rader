@@ -17,6 +17,13 @@ BASE = os.getenv("BASE", "http://localhost:8000")
 
 @pytest.mark.e2e
 def test_embed_and_search_e2e(ensure_seed):
+    asset_id = ensure_seed
+
+    # 1) Sanity: OCR actually produced text
+    t = httpx.get(f"{BASE}/documents/{asset_id}/text", timeout=15).json()
+    assert "hello" in (t.get("text") or "").lower(), f"OCR text missing 'hello': {t}"
+
+    
     r = httpx.get(f"{BASE}/search?q=Hello", timeout=15)
     r.raise_for_status()
     data = r.json()
