@@ -73,7 +73,7 @@ jobs:
       # Build & start your compose stack
       - name: Compose Docker
         run: |
-          docker compose -d --build
+          docker compose up -d --build
 
       # Create the S3 bucket in MinIO using your bundled `mc` service (profile: tools)
       - name: Wait for services to be healthy
