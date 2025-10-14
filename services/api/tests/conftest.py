@@ -41,7 +41,7 @@ def wait_for_api():
 def ensure_seed(wait_for_api):
     """Create & embed a tiny doc so search has something to find."""
     content = b"Hello seed content for vector search :: cargorisk-seed-v1"
-    f = {'file': ('seed.txt', content, 'text/plain')}
+    f = {'file': ('seed.txt', content, 'application/pdf')}
     r = httpx.post(f"{BASE}/upload", files=f, timeout=20)
     r.raise_for_status()
     asset_id = r.json()['id']
