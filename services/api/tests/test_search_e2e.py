@@ -24,7 +24,8 @@ def test_embed_and_search_e2e(ensure_seed):
     assert "hello" in (t.get("text") or "").lower(), f"text missing 'hello': {t}"
 
     # 2) Asset appears in semantic search
-    r = httpx.get(f"{BASE}/search?q=Hello", timeout=15); r.raise_for_status()
+    r = httpx.get(f"{BASE}/search?q=Hello", timeout=15)
+    r.raise_for_status()
     data = r.json()
     ids = [row.get("id") for row in data.get("results", [])]
     assert asset_id in ids, f"Seeded asset {asset_id} not in results: {ids}"
