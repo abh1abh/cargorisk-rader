@@ -1,9 +1,11 @@
-import base64, httpx, pytest, io
-from PIL import Image, ImageDraw, ImageFont
+import io
 import os
 import shutil
 import time
 
+import httpx
+import pytest
+from PIL import Image, ImageDraw
 
 BASE = os.getenv("BASE", "http://localhost:8000")
 
