@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 # from amqp import NotFound
 from botocore.exceptions import ClientError, EndpointConnectionError
@@ -12,10 +11,9 @@ from ..core.logging import get_logger
 from ..core.metrics import timed
 from ..models import MediaAsset
 from ..schemas.document import DocumentOut, DocumentTextOut, OcrRunOut
-from ..services.ocr_service import OCRService
 from ..services.embedding_service import EmbeddingService
+from ..services.ocr_service import OCRService
 from ..services.s3_service import S3Service
-
 
 log = get_logger("svc.document")
 
@@ -34,7 +32,6 @@ class S3Unavailable(RuntimeError):
 
 class ProcessingError(RuntimeError):
     """Used for OCR/embedding failures resulting in 4xx-like 'unprocessable'."""
-    pass
 
 
 @dataclass(slots=True)
@@ -55,7 +52,7 @@ class DocumentService:
         m = self._get_asset(db, asset_id)
         return DocumentTextOut(id=m.id, text=m.ocr_text or "")
     
-    def run_ocr(self, db: Session, asset_id: int, lang: Optional[str]) -> OcrRunOut:
+    def run_ocr(self, db: Session, asset_id: int, lang: str | None) -> OcrRunOut:
         t = timed("ocr")
         m = self._get_asset(db, asset_id)
 

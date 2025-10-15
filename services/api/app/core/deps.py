@@ -3,11 +3,11 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from ..services.document_service import DocumentService
 from ..services.embedding_service import EmbeddingService
 from ..services.ocr_service import OCRService
 from ..services.s3_service import S3Service
 from ..services.upload_service import UploadService
-from ..services.document_service import DocumentService
 from .celery import get_celery
 from .config import Settings, get_settings
 from .db import SessionLocal
