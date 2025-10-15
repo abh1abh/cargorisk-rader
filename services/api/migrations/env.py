@@ -5,6 +5,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine import URL
 
 # add the project root (/app), not /app/app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -18,17 +19,15 @@ fileConfig(config.config_file_name)
 
 
 def get_url():
-    settings = get_settings()
-    user = settings.postgres_user
-    pwd = settings.postgres_password.get_secret_value()
-    host = settings.postgres_host
-    port = settings.postgres_port
-    db   = settings.postgres_db
-    
-    return f"postgresql+psycopg://{user}:{pwd}@{host}:{port}/{db}"
-
-    
-
+    s = get_settings()
+    return URL.create(
+        drivername="postgresql+psycopg",
+        username=s.postgres_user,
+        password=s.postgres_password.get_secret_value(),
+        host=s.postgres_host,
+        port=s.postgres_port,
+        database=s.postgres_db,
+    )
 
 def run_migrations_offline():
     context.configure(

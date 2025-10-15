@@ -17,13 +17,6 @@ async def upload(
         # service returns a dict: {"id", "sha256", "uri"}
         return await upload_service.upload(db=db, file=file)
     except ValueError as e:
-        msg = str(e)
-        if "Empty file" in msg:        
-            raise HTTPException(status_code=400, detail=str(e)) from e
-        if "too large" in msg:
-            raise HTTPException(status_code=413, detail=str(e)) from e
-        if "Unsupported" in msg:
-            raise HTTPException(status_code=415, detail=str(e)) from e
         raise HTTPException(status_code=400, detail=str(e)) from e
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail="Unexpected value error occurred.") from e
