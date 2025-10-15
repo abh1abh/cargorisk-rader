@@ -20,14 +20,14 @@ fileConfig(config.config_file_name)
 def get_url():
     settings = get_settings()
     user = settings.postgres_user
-    pwd = settings.postgres_password.get_secret_value()  # ✅ unwrap SecretStr
+    pwd = settings.postgres_password.get_secret_value()
     host = settings.postgres_host
     port = settings.postgres_port
     db   = settings.postgres_db
-    return (
-        f"postgresql+psycopg://{user}:{pwd}@{host}:{port}/{db}"
-        f"@{host}:{port}/{db}"
-    )
+    
+    return f"postgresql+psycopg://{user}:{pwd}@{host}:{port}/{db}"
+
+    
 
 
 def run_migrations_offline():
