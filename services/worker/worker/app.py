@@ -25,7 +25,7 @@ def extract_metadata(self, asset_id: int):
 def ocr_asset(self, asset_id: int):
     req_id = (getattr(self.request, "headers", {}) or {}).get("request_id")
     headers = {"x-request-id": req_id} if req_id else None
-    r = requests.post(f"{API_BASE}/documents/{asset_id}/ocr", timeout=120, headers=headers)
+    r = requests.post(f"{API_BASE}/document/{asset_id}/ocr", timeout=120, headers=headers)
     r.raise_for_status()
     return r.json()
 
@@ -34,6 +34,6 @@ def ocr_asset(self, asset_id: int):
 def embed_asset(self, asset_id: int):
     req_id = (getattr(self.request, "headers", {}) or {}).get("request_id")
     headers = {"x-request-id": req_id} if req_id else None
-    r = requests.post(f"{API_BASE}/documents/{asset_id}/embed", timeout=120, headers=headers)
+    r = requests.post(f"{API_BASE}/document/{asset_id}/embed", timeout=120, headers=headers)
     r.raise_for_status()
     return r.json()

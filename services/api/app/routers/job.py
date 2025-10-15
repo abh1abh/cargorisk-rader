@@ -3,7 +3,7 @@ import os
 from celery import Celery
 from fastapi import APIRouter, Request
 
-router = APIRouter(prefix="/jobs", tags=["jobs"])
+router = APIRouter(prefix="/job", tags=["job"])
 celery = Celery(broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
 

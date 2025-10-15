@@ -65,8 +65,8 @@ def ensure_seed(wait_for_api):
     r.raise_for_status()
     asset_id = r.json()['id']
 
-    httpx.post(f"{BASE}/documents/{asset_id}/ocr", timeout=60).raise_for_status()
-    httpx.post(f"{BASE}/documents/{asset_id}/embed", timeout=60).raise_for_status()
+    httpx.post(f"{BASE}/document/{asset_id}/ocr", timeout=60).raise_for_status()
+    httpx.post(f"{BASE}/document/{asset_id}/embed", timeout=60).raise_for_status()
     return asset_id
 
 

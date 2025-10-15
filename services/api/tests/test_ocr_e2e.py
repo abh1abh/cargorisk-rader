@@ -61,8 +61,8 @@ def test_ocr_pdf_native_text(wait_for_api):
     r.raise_for_status()
     asset_id = r.json()['id']
 
-    httpx.post(f"{BASE}/documents/{asset_id}/ocr?lang=eng", timeout=60).raise_for_status()
-    text = httpx.get(f"{BASE}/documents/{asset_id}/text", timeout=30).json().get("text","")
+    httpx.post(f"{BASE}/document/{asset_id}/ocr?lang=eng", timeout=60).raise_for_status()
+    text = httpx.get(f"{BASE}/document/{asset_id}/text", timeout=30).json().get("text","")
 
     assert "hello" in text.lower(), f"Expected native text, got: {text!r}"
 
@@ -81,8 +81,8 @@ def test_ocr_image_and_pdf(tesseract_available, wait_for_api):
     r.raise_for_status()
     img_id = r.json()['id']
 
-    httpx.post(f"{BASE}/documents/{img_id}/ocr?lang=eng", timeout=120).raise_for_status()
-    img_text = httpx.get(f"{BASE}/documents/{img_id}/text", timeout=30).json().get("text","")
+    httpx.post(f"{BASE}/document/{img_id}/ocr?lang=eng", timeout=120).raise_for_status()
+    img_text = httpx.get(f"{BASE}/document/{img_id}/text", timeout=30).json().get("text","")
     assert img_text.strip(), "Image OCR returned empty text"
 
     # IMAGE-ONLY PDF OCR (assert non-empty)
@@ -97,6 +97,6 @@ def test_ocr_image_and_pdf(tesseract_available, wait_for_api):
     r.raise_for_status()
     pdf_id = r.json()['id']
 
-    httpx.post(f"{BASE}/documents/{pdf_id}/ocr?lang=eng", timeout=120).raise_for_status()
-    pdf_text = httpx.get(f"{BASE}/documents/{pdf_id}/text", timeout=30).json().get("text","")
+    httpx.post(f"{BASE}/document/{pdf_id}/ocr?lang=eng", timeout=120).raise_for_status()
+    pdf_text = httpx.get(f"{BASE}/document/{pdf_id}/text", timeout=30).json().get("text","")
     assert pdf_text.strip(), "Image-only PDF OCR returned empty text"

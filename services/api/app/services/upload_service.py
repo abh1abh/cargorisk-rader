@@ -2,7 +2,6 @@
 from collections.abc import Iterable
 
 from celery import Celery, chain
-from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -60,10 +59,10 @@ class UploadService:
         except IntegrityError as e:
             db.rollback()
             asset = db.query(MediaAsset).filter_by(sha256=digest).first()
+            row_created = False
             if not asset:
-                # Convert to runtime (infra/state) error; don't raise IntegrityError yourself
-                log.warning("upload_db_dedup", extra={"asset_id": asset.id, "sha256": digest})
-                row_created = False
+                # Convert to runtime (infra/state) error
+                log.warning("upload_db_dedup", extra={"sha256": digest})
                 raise RuntimeError("DB inconsistent: hash exists but row not found") from e
         # duplicate is fine; continue
         except Exception as e:

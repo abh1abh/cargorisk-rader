@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     s3_endpoint: str = Field(default="http://minio:9000", alias="S3_ENDPOINT")
     s3_access_key: SecretStr = Field(alias="S3_ACCESS_KEY")
     s3_secret_key: SecretStr = Field(alias="S3_SECRET_KEY")
-    s3_bucket: str = Field(default="documents", alias="S3_BUCKET")
-    s3_public_base: str = Field(default="http://minio:9000", alias="S3_PUBLIC_BASE")
+    s3_bucket: str = Field(default="uploads", alias="S3_BUCKET")
+    s3_public_base: str = Field(default="http://localhost:9000", alias="S3_PUBLIC_BASE")
 
    # Upload policy
     max_upload_bytes: int = Field(default=50 * 1024 * 1024, alias="MAX_UPLOAD_BYTES")

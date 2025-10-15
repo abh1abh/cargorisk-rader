@@ -10,7 +10,7 @@ def test_embed_and_search_e2e(ensure_seed):
     asset_id = ensure_seed
 
      # 1) Text was extracted
-    t = httpx.get(f"{BASE}/documents/{asset_id}/text", timeout=15).json()
+    t = httpx.get(f"{BASE}/document/{asset_id}/text", timeout=15).json()
     assert "hello" in (t.get("text") or "").lower(), f"text missing 'hello': {t}"
 
     # 2) Asset appears in semantic search

@@ -85,7 +85,7 @@ export default function SearchPage() {
           <ul className="space-y-3">
             {response.results.map((r) => (
               <li key={r.id} className="border rounded p-3">
-                <a className="font-medium underline" href={`/documents/${r.id}`}>
+                <a className="font-medium underline" href={`/document/${r.id}`}>
                   Document #{r.id}
                 </a>
                 <div className="text-xs text-gray-600 mt-1 break-all">{r.storage_uri}</div>
