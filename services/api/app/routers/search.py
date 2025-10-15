@@ -3,9 +3,8 @@ from pgvector.psycopg import Vector as PgVector
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from ..core.deps import get_db
+from ..core.deps import EmbeddingDependency, get_db
 from ..core.logging import get_logger
-from ..services.embeddings import embed_text
 
 log = get_logger("api.search")
 
@@ -15,8 +14,8 @@ EMBED_DIM = 384  # keep in sync with your model
 
 
 @router.get("")
-def search(q: str = Query(...), limit: int = 5, offset: int = 0, db: Session = Depends(get_db)):
-    emb = embed_text(q)
+def search(embedder: EmbeddingDependency, q: str = Query(...), limit: int = 5, offset: int = 0, db: Session = Depends(get_db)):
+    emb = embedder.embed_text(q)
 
     if EMBED_DIM and len(emb) != EMBED_DIM:
         raise HTTPException(status_code=500, detail="Embedding dimension mismatch")

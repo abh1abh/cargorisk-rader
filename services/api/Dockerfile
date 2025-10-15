@@ -16,7 +16,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # >>> Pre-warm the SentenceTransformer model so no network is needed at runtime
 ENV HF_HOME=/root/.cache/huggingface \
-    TRANSFORMERS_CACHE=/root/.cache/huggingface \
     SENTENCE_TRANSFORMERS_HOME=/root/.cache/huggingface
 RUN python - <<'PY'
 from sentence_transformers import SentenceTransformer

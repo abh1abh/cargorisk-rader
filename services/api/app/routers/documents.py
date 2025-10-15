@@ -6,14 +6,11 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
-from ..core.deps import get_db, provide_s3
+from ..core.deps import EmbeddingDependency, OCRDependency, S3Dependency, get_db
 from ..core.logging import get_logger
 from ..core.metrics import timed
-from ..core.s3 import S3Service
 from ..models import MediaAsset
 from ..schemas.documents import DocumentOut, DocumentTextOut, OcrRunOut
-from ..services import ocr as ocrsvc
-from ..services.embeddings import embed_text
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -40,7 +37,8 @@ def get_document_text(asset_id: int, db: Session = Depends(get_db)):
 @router.post("/{asset_id}/ocr", response_model=OcrRunOut)
 def run_ocr(
     asset_id: int, 
-    s3: S3Service = Depends(provide_s3), 
+    s3: S3Dependency, 
+    ocr: OCRDependency,
     db: Session = Depends(get_db),
     lang: Annotated[str | None, Query(description="Tesseract language(s), e.g. 'eng+nor'")] = None,
 
@@ -62,23 +60,23 @@ def run_ocr(
         mime = m.type or ""
 
         if mime.startswith("image/"):
-            text = ocrsvc.image_bytes_to_text(blob, lang=lang or "eng+nor")
+            text = ocr.image_bytes_to_text(blob, lang=lang or "eng+nor")
             mode = "image"
         elif mime == "application/pdf":
-            text = ocrsvc.pdf_bytes_to_text(blob, lang=lang or "eng+nor")
+            text = ocr.pdf_bytes_to_text(blob, lang=lang or "eng+nor")
             mode = "pdf"
         elif mime in {
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
             "application/vnd.ms-excel.sheet.macroEnabled.12",  # .xlsm
             }:
-            text = ocrsvc.xlsx_bytes_to_text(blob)
+            text = ocr.xlsx_bytes_to_text(blob)
             mode = "xlsx"
         else:
             try:
-                text = ocrsvc.pdf_bytes_to_text(blob)
+                text = ocr.pdf_bytes_to_text(blob)
                 mode = "pdf_fallback"
             except Exception:
-                text = ocrsvc.image_bytes_to_text(blob)
+                text = ocr.image_bytes_to_text(blob)
                 mode = "image_fallback"
     except Exception as e:
         log.error("ocr_failed", extra={"asset_id": asset_id, "error": e.__class__.__name__})
@@ -92,20 +90,24 @@ def run_ocr(
     return OcrRunOut(id=m.id, ocr_chars=len(text or ""))
 
 @router.post("/{asset_id}/embed")
-def embed_document(asset_id: int, db: Session = Depends(get_db)):
+def embed_document(
+    embedder: EmbeddingDependency,
+    asset_id: int,
+    db: Session = Depends(get_db),
+):
     time = timed("embed")
     m = db.get(MediaAsset, asset_id)
     if not m:
         raise HTTPException(404, "Asset not found")
     text = m.ocr_text or ""
-    emb = embed_text(text)
+    emb = embedder.embed_text(text)
     db.execute(update(MediaAsset).where(MediaAsset.id==asset_id).values(embedding=emb))
     db.commit()
     time({"asset_id": asset_id, "chars": len(text), "dim": len(emb)})
     return {"id": m.id, "dim": len(emb)}
 
 @router.get("/{id}/download", include_in_schema=False)
-def download_original(id: int, s3: S3Service = Depends(provide_s3), db: Session = Depends(get_db)):
+def download_original(id: int, s3: S3Dependency, db: Session = Depends(get_db)):
     media_asset = db.get(MediaAsset, id)
     if not media_asset or not media_asset.storage_uri:
         raise HTTPException(status_code=404, detail="Document not found")

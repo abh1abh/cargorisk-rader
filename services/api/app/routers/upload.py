@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..core.deps import get_db, provide_default_bucket, provide_s3
+from ..core.deps import S3Dependency, get_db, provide_default_bucket
 from ..core.logging import get_logger, now_ms, request_id_ctx
-from ..core.s3 import S3Service
 from ..models import MediaAsset
+from ..services.s3 import S3Service
 
 log = get_logger("api.upload")
 
@@ -40,11 +40,11 @@ MAX_BYTES = 50 * 1024 * 1024  # 50 MB
 
 @router.post("", summary="Upload a file to MinIO and register media asset")
 async def upload(
+    s3: S3Dependency,
     request: Request, 
-    file: UploadFile = File(...), 
     db: Session = Depends(get_db),
-    s3: S3Service = Depends(provide_s3),
     bucket: str = Depends(provide_default_bucket),
+    file: UploadFile = File(...), 
 ):
     t0 = now_ms()
 

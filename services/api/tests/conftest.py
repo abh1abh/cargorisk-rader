@@ -7,6 +7,8 @@ import httpx
 import pytest
 from openpyxl import Workbook
 
+from services.api.app.services.embeddings import EmbeddingService
+
 BASE = os.getenv("BASE", "http://localhost:8000")
 
 @pytest.fixture(scope="session")
@@ -66,3 +68,8 @@ def ensure_seed(wait_for_api):
     httpx.post(f"{BASE}/documents/{asset_id}/ocr", timeout=60).raise_for_status()
     httpx.post(f"{BASE}/documents/{asset_id}/embed", timeout=60).raise_for_status()
     return asset_id
+
+
+@pytest.fixture(scope="session")
+def embedding_service() -> EmbeddingService:
+    return EmbeddingService()

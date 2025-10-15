@@ -1,15 +1,47 @@
+import threading
+import torch
+import numpy as np
 from sentence_transformers import SentenceTransformer
 
-_model = None
-def get_model():
-    global _model
-    if _model is None:
-        _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    return _model
 
-def embed_text(text: str) -> list[float]:
-    if not text or not text.strip():
-        return [0.0]*384
-    vec = get_model().encode([text[:5000]], normalize_embeddings=True)[0]
-    return vec.tolist()
+class EmbeddingService:
+    def __init__(self, model: str = "sentence-transformers/all-MiniLM-L6-v2", device: str = "auto", embed_dim: int = 384) -> None:
+        self.model = model
+        self.device = self._resolve_device(device)
+        self.embed_dim = embed_dim
+        self._model: SentenceTransformer | None = None
+        self._model_lock = threading.Lock()
+    
+    # Internal
+    def _resolve_device(self, device: str) -> str:
+        """Pick an available device if 'auto' is requested."""
+        if device != "auto":
+            return device
+        if torch.cuda.is_available():
+            return "cuda"
+        if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+            return "mps"
+        return "cpu" 
+    
+    def _get_model(self) -> SentenceTransformer:
+        if self._model is None:
+            with self._model_lock:
+                if self._model is None:
+                    self._model = SentenceTransformer(self.model, device=self.device)
+        return self._model
+    
+    # Public
+    def embed_text(self, text: str) -> list[float]:
+        if not text or not text.strip():
+            return [0.0]*self.embed_dim
+        
+        snippet = text[:5000]
+        model = self._get_model()
+        # normalize_embeddings=True already L2-normalizes the output
+        vec = model.encode([snippet], normalize_embeddings=True, convert_to_numpy=True)[0]
+        if not isinstance(vec, np.ndarray) or vec.shape[0] != self.embed_dim or not np.isfinite(vec).all():
+            return [0.0] * self.embed_dim
+        return vec.tolist()
+
+
 
