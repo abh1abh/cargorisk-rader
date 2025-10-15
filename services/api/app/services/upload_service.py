@@ -45,7 +45,7 @@ class UploadService:
         except RuntimeError as e:
             # Surface clear 502 if MinIO is down/misconfigured
             log.error("upload_s3_error", extra={"error": str(e)})
-            raise HTTPException(status_code=502, detail=str(e)) from e
+            raise RuntimeError("S3 upload failed") from e
         # Insert DB row (idempotent via sha256 unique)
         try:
             asset = MediaAsset(
@@ -61,16 +61,27 @@ class UploadService:
             db.rollback()
             asset = db.query(MediaAsset).filter_by(sha256=digest).first()
             if not asset:
-                log.error("upload_db_inconsistent", extra={"sha256": digest})
-                raise HTTPException(status_code=500, detail="Hash exists but row not found") from e
+                # Convert to runtime (infra/state) error; don't raise IntegrityError yourself
+                log.warning("upload_db_dedup", extra={"asset_id": asset.id, "sha256": digest})
+                row_created = False
+                raise RuntimeError("DB inconsistent: hash exists but row not found") from e
+        # duplicate is fine; continue
+        except Exception as e:
             row_created = False
+            db.rollback()
+            log.error("upload_db_error", extra={"error": str(e)})
+            raise RuntimeError("DB operation failed") from e
 
         log.info("upload_db", extra={"asset_id": asset.id, "sha256": digest, "row_created": row_created})
 
         # Enqueue background processing (OCR, embed) if new row       
-        self._enqueue_pipeline(asset.id)
+        try:
+            self._enqueue_pipeline(asset.id)
+        except Exception as e:
+            log.error("upload_enqueue_error", extra={"asset_id": asset.id, "error": str(e)})
+            raise RuntimeError("Enqueue failed") from e
 
-        ms= t({"asset_id": asset.id})
+        ms = t({"asset_id": asset.id})
 
         log.info("upload_done", extra={"asset_id": asset.id, "ms": ms})
 
@@ -80,12 +91,12 @@ class UploadService:
     # Internal methods
     def _validate_file(self, size: int, content_type: str) -> None:
         if size == 0:
-            raise HTTPException(400, "Empty file")
+            raise ValueError("Empty file")
         if size > self.max_bytes:
-            raise HTTPException(413, "File too large")
+            raise ValueError("File too large")
         if content_type not in self.allowed_mime:
-            raise HTTPException(415, f"Unsupported content_type: {content_type}")
-        
+            raise ValueError(f"Unsupported content_type: {content_type}")
+
     def _enqueue_pipeline(self, asset_id: int) -> None:
         # Auto-enqueue background extraction after we have a stable asset.id
         # We send request-id in headers for correlation; worker can read it if task is bound.
@@ -99,3 +110,4 @@ class UploadService:
             ).apply_async()
         except Exception as e:
             log.warning("enqueue_failed", extra={"asset_id": asset_id, "error": e.__class__.__name__})
+            raise RuntimeError("Failed to enqueue background work") from e

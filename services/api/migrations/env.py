@@ -9,7 +9,7 @@ from sqlalchemy import engine_from_config, pool
 # add the project root (/app), not /app/app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.core.config import settings
+from app.core.config import get_settings
 from app.core.db import Base
 
 config = context.config
@@ -18,9 +18,15 @@ fileConfig(config.config_file_name)
 
 
 def get_url():
+    settings = get_settings()
+    user = settings.postgres_user
+    pwd = settings.postgres_password.get_secret_value()  # ✅ unwrap SecretStr
+    host = settings.postgres_host
+    port = settings.postgres_port
+    db   = settings.postgres_db
     return (
-        f"postgresql+psycopg://{settings.postgres_user}:{settings.postgres_password}"
-        f"@{settings.postgres_host}:{settings.postgres_port}/{settings.postgres_db}"
+        f"postgresql+psycopg://{user}:{pwd}@{host}:{port}/{db}"
+        f"@{host}:{port}/{db}"
     )
 
 
