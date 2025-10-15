@@ -7,6 +7,7 @@ from ..services.document_service import DocumentService
 from ..services.embedding_service import EmbeddingService
 from ..services.ocr_service import OCRService
 from ..services.s3_service import S3Service
+from ..services.search_service import SearchService
 from ..services.upload_service import UploadService
 from .celery import get_celery
 from .config import Settings, get_settings
@@ -64,3 +65,17 @@ def provide_document_service() -> DocumentService:
     return _document_singleton()
 
 DocumentServiceDependency = Annotated[DocumentService, Depends(provide_document_service)]
+
+
+@lru_cache(maxsize=1)
+def _search_singleton() -> SearchService:
+    embedder = get_embedding_service()
+    settings = get_settings()
+    embed_dim = getattr(settings, "embed_dim", 384)
+    probes = getattr(settings, "ivfflat_probes", 20)
+    return SearchService(embedder=embedder, embed_dim=embed_dim, ivfflat_probes=probes)
+
+def provide_search_service() -> SearchService:
+    return _search_singleton()
+
+SearchServiceDependency = Annotated[SearchService, Depends(provide_search_service)]
