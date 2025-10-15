@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import io
-from typing import Optional
 
 import fitz  # PyMuPDF
 import pytesseract
@@ -30,7 +29,7 @@ class OCRService:
         self._tesseract_config = f"--oem {oem} --psm {psm}"
 
 
-    def pdf_bytes_to_text(self, pdf_bytes: bytes, lang: Optional[str] = None) -> str:
+    def pdf_bytes_to_text(self, pdf_bytes: bytes, lang: str | None = None) -> str:
         eff_lang = (lang or self.lang)
         parts: list[str] = []
         with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
@@ -47,7 +46,7 @@ class OCRService:
                 parts.append(self._ocr_image(img, lang=eff_lang))
         return "\n".join(parts).strip()
 
-    def image_bytes_to_text(self, img_bytes: bytes, lang: Optional[str] = None) -> str:
+    def image_bytes_to_text(self, img_bytes: bytes, lang: str | None = None) -> str:
         eff_lang = (lang or self.lang)
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         return self._ocr_image(img, lang=eff_lang).strip()

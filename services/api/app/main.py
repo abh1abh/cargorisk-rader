@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .core.config import settings
+from .core.config import Settings, get_settings
 from .core.deps import get_db
 from .core.http_logging import http_logging_middleware
 from .core.logging import setup_logging
@@ -23,9 +23,11 @@ app.add_middleware(
 
 app.middleware("http")(http_logging_middleware)
 
+_settings = get_settings()
+
 
 @app.get("/health")
-def health():
+def health(settings: Settings = Depends(get_settings)):
     return {"status": "ok", "bucket": settings.s3_bucket}
 
 @app.get("/health/db")
@@ -40,7 +42,7 @@ def health_db(db: Session = Depends(get_db)):
     }
 
 @app.get("/health/s3")
-def health_s3():
+def health_s3(settings: Settings = Depends(get_settings)):
     s3 = boto3.client("s3",
         endpoint_url=settings.s3_endpoint,
         aws_access_key_id=settings.s3_access_key,

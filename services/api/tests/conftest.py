@@ -7,7 +7,7 @@ import httpx
 import pytest
 from openpyxl import Workbook
 
-from services.api.app.services.embeddings import EmbeddingService
+from services.api.app.services.embedding_service import EmbeddingService
 
 BASE = os.getenv("BASE", "http://localhost:8000")
 

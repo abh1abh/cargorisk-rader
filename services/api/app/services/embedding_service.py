@@ -1,6 +1,7 @@
 import threading
-import torch
+
 import numpy as np
+import torch
 from sentence_transformers import SentenceTransformer
 
 

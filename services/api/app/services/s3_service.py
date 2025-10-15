@@ -10,11 +10,13 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 class S3Service:
     def __init__(self, settings):
         # Path-style addressing is more MinIO-friendly
+        access_key = settings.s3_access_key.get_secret_value()
+        secret_key = settings.s3_secret_key.get_secret_value()
         self._s3 = boto3.client(
             "s3",
             endpoint_url=settings.s3_endpoint,
-            aws_access_key_id=settings.s3_access_key,
-            aws_secret_access_key=settings.s3_secret_key,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
             config=Config(s3={"addressing_style": "path"}),
         )
 
