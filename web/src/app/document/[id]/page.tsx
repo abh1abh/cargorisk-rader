@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { DocumentMeta, DocumentText } from "@/types";
-import OcrText from "@/components/OcrText";
+import OcrText from "@/components/document/OcrText";
 
 async function getDoc(id: string) {
   const [meta, text] = await Promise.all([

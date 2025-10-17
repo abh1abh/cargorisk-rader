@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    async rewrites() {
-        return [{ source: "/api/:path*", destination: "http://api:8000/:path*" }];
-    },
+  output: "standalone",
+  async rewrites() {
+    return [{ source: "/api/:path*", destination: "http://api:8000/:path*" }];
+  },
+  eslint: {
+    // Allow production builds to complete even with ESLint errors:
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;

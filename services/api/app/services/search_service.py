@@ -1,3 +1,4 @@
+import code
 from dataclasses import dataclass
 
 from pgvector.psycopg import Vector as PgVector
@@ -43,33 +44,76 @@ class SearchService:
         
         qvec = PgVector(emb)
 
-        db.execute(text(f"SET LOCAL ivfflat.probes = {int(self.ivfflat_probes)}"))   
+
+        candidates = max(limit * 10, 100)  # widen then re-rank
+        probes = max(1, min(int(self.ivfflat_probes), 1024))
 
         sql = text("""
-            SELECT id,
-                    storage_uri,
-                    LEFT(COALESCE(ocr_text,''), 200) AS snippet,
-                    (embedding <-> :qvec)::float AS distance,
-                    COUNT(*) OVER() AS total
-            FROM media_assets
-            WHERE embedding IS NOT NULL
-            ORDER BY embedding <-> :qvec
-            LIMIT :limit
-            OFFSET :offset
+            WITH ann AS (
+                SELECT id, storage_uri, ocr_text,
+                       (embedding <-> :qvec)::float AS distance
+                FROM media_assets
+                WHERE embedding IS NOT NULL
+                ORDER BY (embedding <-> :qvec), id ASC
+                LIMIT :candidates
+            ),
+            lex AS (
+                SELECT id,
+                       ts_rank_cd(
+                         to_tsvector('simple', coalesce(ocr_text,'')),
+                         plainto_tsquery('simple', :qtext)
+                       ) AS bm25
+                FROM media_assets
+                WHERE to_tsvector('simple', coalesce(ocr_text,'')) @@ plainto_tsquery('simple', :qtext)
+            )
+            SELECT a.id,
+                   a.storage_uri,
+                   LEFT(coalesce(a.ocr_text,''), 200) AS snippet,
+                   a.distance,
+                   coalesce(l.bm25, 0) AS bm25,
+                   (0.7 * (1 - LEAST(1.0, a.distance)) + 0.3 * coalesce(l.bm25,0)) AS score
+            FROM ann a
+            LEFT JOIN lex l USING (id)
+            ORDER BY score DESC, a.distance ASC, a.id ASC
+            LIMIT :limit OFFSET :offset
         """)
 
-        params = {"qvec": qvec, "limit": limit, "offset": offset}
+        params = {
+            "qvec": qvec,
+            "qtext": query,
+            "candidates": candidates,
+            "limit": limit,
+            "offset": offset,
+        }
+        try:
+            with db.begin():
+                # set ivfflat.probes for this transaction
+                db.execute(text(f"SET LOCAL statement_timeout = '5s'"))
+                db.execute(text(f"SET LOCAL ivfflat.probes = {probes}"))
 
-        rows = db.execute(sql, params).mappings().all()
-        if not rows:
-            # one-time brute-force fallback
-            db.execute(text("SET LOCAL enable_indexscan = off"))
-            db.execute(text("SET LOCAL enable_bitmapscan = off"))
-            rows = db.execute(sql, params).mappings().all()
-        if rows:
-            print(rows[0].keys())
-
-        total = rows[0]["total"] if rows else 0
+                rows = db.execute(sql, params).mappings().all()
+                fallback_used = False
+                if not rows:
+                    # one-time brute-force fallback
+                    db.execute(text("SET LOCAL enable_indexscan = off"))
+                    db.execute(text("SET LOCAL enable_bitmapscan = off"))
+                    rows = db.execute(sql, params).mappings().all()
+                    fallback_used = True
+                if rows:
+                    print(rows[0].keys())
+        except Exception as e:
+            ms = t()
+            log.error(
+                "search_db_failed",
+                extra={
+                    "duration": ms,
+                    "sqlstate": getattr(e, "orig", {}).get("pgcode", "N/A"),
+                    "exc": e.__class__.__name__,
+                    "probes": probes,
+                    "candidates": candidates,
+                },
+            )
+            raise ProcessingError("Search failed due to a database error.") from e
 
         results = [
             {
@@ -77,9 +121,25 @@ class SearchService:
                 "storage_uri": r["storage_uri"],
                 "snippet": r["snippet"],
                 "distance": r["distance"],
-            } for r in rows
+                "score": r["score"],
+                "bm25": r["bm25"],
+            }
+            for r in rows
         ]
-        ms = t()
-        log.info("search_complete", extra={"duration": ms, "total": total, "returned": len(results)})
+        next_offset = (offset + limit) if len(results) == limit else None
 
-        return {"query": query, "results": results, "total": total}
+        ms = t()
+
+        log.info(
+            "search_complete",
+            extra={
+                "duration": ms,
+                "returned": len(results),
+                "probes": probes,
+                "candidates": candidates,
+                "fallback": fallback_used,
+                "next_offset": next_offset,
+            },
+        )
+
+        return {"query": query, "results": results, "next_offset": next_offset}
