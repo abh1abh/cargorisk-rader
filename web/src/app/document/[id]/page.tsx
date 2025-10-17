@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import type { DocumentMeta, DocumentText } from "@/types";
 import OcrText from "@/components/document/OcrText";
+import { ReprocessButtons } from "@/components/document/ReprocessButtons";
 
 async function getDoc(id: string) {
   const [meta, text] = await Promise.all([
@@ -14,8 +15,9 @@ export const runtime = "nodejs"; // optional, keeps it off Edge
 
 // Server component for Doc page
 // (uses server-side api() wrapper, and renders client OcrText component)
-export default async function DocPage({ params }: { params: { id: string } }) {
-  const { meta, text } = await getDoc(params.id);
+export default async function DocPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
+  const { meta, text } = await getDoc(id);
 
   return (
     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -40,6 +42,7 @@ export default async function DocPage({ params }: { params: { id: string } }) {
             OCR text not available yet for this document.
           </div>
         )}
+        <ReprocessButtons id={Number(id)} />
       </div>
 
       {/* Client component handles onClick + clipboard */}

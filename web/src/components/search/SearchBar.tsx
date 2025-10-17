@@ -1,3 +1,5 @@
+import { Button } from "../ui/Button";
+
 type Props = {
   value: string;
   onChange: (v: string) => void;
@@ -14,9 +16,7 @@ export default function SearchBar({ value, onChange, onSubmit, placeholder }: Pr
         placeholder={placeholder}
         className="border p-2 rounded w-full"
       />
-      <button onClick={onSubmit} className="px-3 py-2 border rounded">
-        Search
-      </button>
+      <Button onClick={onSubmit}>Search</Button>
     </div>
   );
 }
