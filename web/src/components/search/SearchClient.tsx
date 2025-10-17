@@ -20,7 +20,7 @@ export default function SearchClient() {
   const abortRef = useRef<AbortController | null>(null);
   const reqIdRef = useRef(0);
 
-  const [loadingMode, setLoadingMode] = useState<"idle" | "replace" | "append">("idle");
+  //   const [loadingMode, setLoadingMode] = useState<"idle" | "replace" | "append">("idle");
 
   useEffect(() => {
     if (!debouncedQ.trim()) {
@@ -46,9 +46,10 @@ export default function SearchClient() {
       if (reqId !== reqIdRef.current) return; // stale response
       setItems((prev) => (replace ? data.results : [...(prev || []), ...data.results]));
       setNextOffset(data.next_offset);
-    } catch (e: any) {
-      if (e.name === "AbortError") return;
-      setError(e.message || "Search error");
+    } catch (e) {
+      const error = e as Error;
+      if (error.name === "AbortError") return;
+      setError(error.message || "Search error");
       if (replace) {
         setItems([]);
         setNextOffset(null);
