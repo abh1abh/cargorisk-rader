@@ -90,8 +90,8 @@ def download_original(
     db: Session = Depends(get_db),
 ):
     try:
-        print("TEST")
         url = document_service.generate_download_url(db=db, asset_id=asset_id)
+        print
     except NotFound as e:
         raise HTTPException(status_code=404, detail="Document not found") from e
     except RuntimeError as e:

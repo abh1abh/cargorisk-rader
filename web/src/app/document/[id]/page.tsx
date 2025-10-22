@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api, apiRedirectLocation } from "@/lib/api";
 import type { DocumentMeta, DocumentText } from "@/types";
 import OcrText from "@/components/document/OcrText";
 import { ReprocessButtons } from "@/components/document/ReprocessButtons";
@@ -8,7 +8,10 @@ async function getDoc(id: string) {
     api<DocumentMeta>(`/document/${id}`),
     api<DocumentText>(`/document/${id}/text`).catch(() => ({ id: Number(id), text: "" })),
   ]);
-  return { meta, text: text.text || "" };
+
+  const url = await apiRedirectLocation(`/document/${id}/download`);
+
+  return { meta, text: text.text || "", url };
 }
 
 export const runtime = "nodejs"; // optional, keeps it off Edge
@@ -17,7 +20,7 @@ export const runtime = "nodejs"; // optional, keeps it off Edge
 // (uses server-side api() wrapper, and renders client OcrText component)
 export default async function DocPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const { meta, text } = await getDoc(id);
+  const { meta, text, url } = await getDoc(id);
 
   return (
     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -28,7 +31,7 @@ export default async function DocPage(props: { params: Promise<{ id: string }> }
         </div>
         <div className="text-sm break-all">
           Storage:{" "}
-          <a className="underline" href={`/api/document/${meta.id}/download`} target="_blank" rel="noreferrer">
+          <a className="underline" href={`${url}`} target="_blank" rel="noreferrer">
             Open original
           </a>
         </div>

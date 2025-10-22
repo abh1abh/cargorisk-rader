@@ -21,3 +21,23 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return r.json() as Promise<T>;
 }
+
+// Get the Location header from a redirecting endpoint (e.g. 302/303/307/308)
+export async function apiRedirectLocation(path: string, init?: RequestInit): Promise<string> {
+  const url = `${INTERNAL_API_URL}${path}`;
+  const r = await fetch(url, {
+    ...init,
+    cache: "no-store",
+    redirect: "manual", // <- DO NOT follow the redirect
+  });
+
+  // Expect a redirect status
+  if (r.status >= 300 && r.status < 400) {
+    const loc = r.headers.get("location");
+    if (!loc) throw new Error(`Missing Location header on ${path}`);
+    return loc; // should be the presigned S3 URL
+  }
+
+  // If your backend ever streams the file directly instead of redirecting
+  throw new Error(`Expected redirect, got HTTP ${r.status} on ${path}`);
+}

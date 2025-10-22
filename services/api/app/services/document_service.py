@@ -99,34 +99,25 @@ class DocumentService:
         return {"id": m.id, "dim": len(emb)}
 
     def generate_download_url(self, db: Session, asset_id: int) -> str:
-        log.info("GENERATE URL")
         m = self._get_asset(db, asset_id)
         if not m.storage_uri:
             raise NotFound("Document not found")
-        log.info("1")
         bucket, key = self.s3.parse_s3_uri(m.storage_uri)
         try:
-            log.info("2")
-            
             url = self.s3.generate_presigned_url(
                 "get_object",
                 params={"Bucket": bucket, "Key": key},
                 expires_in=600,
             )
         except Exception as e:
-            log.info("2")
-
             log.error("presign_failed", extra={"asset_id": asset_id, "error": e})
             # Infrastructure-ish failure
             raise RuntimeError(str(e)) from e
 
         # Normalize to public base if needed
-        log.info(" BEFORE URL", extra={"URL": url})
         url = url.replace("http://minio:9000", self.s3_public_base)
-        log.info("AFTER URL", extra={"URL": url})
         return url
     
-
     # Internal
     @staticmethod
     def _get_asset(db: Session, asset_id: int) -> MediaAsset:
