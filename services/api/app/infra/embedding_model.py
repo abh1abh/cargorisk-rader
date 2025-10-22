@@ -29,7 +29,8 @@ class EmbeddingModel:
         if self._model is None:
             with self._model_lock:
                 if self._model is None:
-                    self._model = SentenceTransformer(self.model, device=self.device)
+                    resolved = self._resolve_device(self.device)
+                    self._model = SentenceTransformer(self.model, device=resolved)
         return self._model
     
     # Public
