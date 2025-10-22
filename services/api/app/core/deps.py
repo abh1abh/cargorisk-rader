@@ -3,14 +3,12 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..domain.ports import BlobStore, EmbeddingModelPort, OcrPort, MediaAssetRepo
+from ..domain.ports import BlobStore, EmbeddingModelPort, MediaAssetRepo, OcrPort
 from ..infra.embedding_model import EmbeddingModel
 from ..infra.ocr_engine import OcrEngine
 from ..infra.s3_blob_store import S3BlobStore
-from ..services.document_service import DocumentService
 from ..infra.sqlalchemy_media_asset_repo import SqlAlchemyMediaAssetRepo
-
-
+from ..services.document_service import DocumentService
 from ..services.search_service import SearchService
 from ..services.upload_service import UploadService
 from .celery import get_celery

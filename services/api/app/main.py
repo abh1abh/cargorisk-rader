@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 # import asyncio
 # from anyio import to_thread
 import boto3
@@ -8,7 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .core.config import Settings, get_settings
-from .core.deps import get_db #, _s3_singleton, get_embedding_model, get_ocr_service
+from .core.deps import get_db  #, _s3_singleton, get_embedding_model, get_ocr_service
 from .core.http_logging import http_logging_middleware
 from .core.logging import setup_logging
 from .routers import document, job, search, upload
@@ -29,7 +28,7 @@ setup_logging()  # before creating app/logging
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
-#     asyncio.create_task(_warm_heavy_singletons())  # don’t block startup
+#     asyncio.create_task(_warm_heavy_singletons())  # don't block startup
 #     yield
 
 

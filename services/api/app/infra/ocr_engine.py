@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import io
+from dataclasses import dataclass
 
 import fitz  # PyMuPDF
 import pytesseract

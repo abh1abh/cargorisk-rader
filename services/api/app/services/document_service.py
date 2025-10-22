@@ -4,14 +4,12 @@ from dataclasses import dataclass
 
 # from amqp import NotFound
 from botocore.exceptions import ClientError, EndpointConnectionError
-from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger
 from ..core.metrics import timed
 from ..domain.exceptions import NotFound, ProcessingError, S3Unavailable
-from ..domain.ports import BlobStore, EmbeddingModelPort, OcrPort, MediaAssetRepo
-from ..models import MediaAsset
+from ..domain.ports import BlobStore, EmbeddingModelPort, MediaAssetRepo, OcrPort
 from ..schemas.document import DocumentOut, DocumentTextOut, OcrRunOut
 
 log = get_logger("svc.document")

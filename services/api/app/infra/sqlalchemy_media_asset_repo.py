@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from ..domain.exceptions import NotFound
 from ..domain.ports import MediaAssetRepo
 from ..models import MediaAsset
-from sqlalchemy import update
 
 
 class SqlAlchemyMediaAssetRepo(MediaAssetRepo):
