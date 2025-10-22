@@ -28,10 +28,10 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(scope="session")
 def wait_for_api():
-    """Wait for /health up to ~60s; skip e2e if not available."""
+    """Wait for /live up to ~60s; skip e2e if not available."""
     if httpx is None:
         pytest.skip("httpx not installed; skipping e2e")
-    url = f"{BASE}/health"
+    url = f"{BASE}/live"
     for _ in range(60):
         try:
             r = httpx.get(url, timeout=2.0)
