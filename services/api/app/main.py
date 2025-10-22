@@ -50,7 +50,7 @@ app.middleware("http")(http_logging_middleware)
 # TODO: Move to route 
 @app.get("/live")
 def live():
-    return {"status": "up"}
+    return {"status": "ok"}
 
 # @app.get("/ready")
 # async def ready():
