@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 import boto3
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,13 +7,23 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .core.config import Settings, get_settings
-from .core.deps import get_db
+from .core.deps import _s3_singleton, get_db, get_embedding_service, get_ocr_service
 from .core.http_logging import http_logging_middleware
 from .core.logging import setup_logging
 from .routers import document, job, search, upload
 
 setup_logging()  # before creating app/logging
-app = FastAPI()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Warm heavy singletons (safe to call cached providers)
+    get_embedding_service()  # triggers model load once
+    _s3_singleton()
+    get_ocr_service()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,9 +35,8 @@ app.add_middleware(
 
 app.middleware("http")(http_logging_middleware)
 
-_settings = get_settings()
 
-
+# TODO: Move to route 
 @app.get("/health")
 def health(settings: Settings = Depends(get_settings)):
     return {"status": "ok", "bucket": settings.s3_bucket}

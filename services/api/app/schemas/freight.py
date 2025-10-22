@@ -1,33 +1,35 @@
-from pydantic import BaseModel, Field
 from datetime import date
-from typing import Optional, List, Any
+from typing import Any
+
+from pydantic import BaseModel, Field
+
 
 class FreightItemIn(BaseModel):
-    origin: Optional[str] = None
-    destination: Optional[str] = None
-    mode: Optional[str] = "sea"
-    carrier: Optional[str] = None
-    equipment: Optional[str] = None
-    qty: Optional[int] = 1
-    currency: Optional[str] = None
-    rate_per_unit: Optional[float] = None
-    total_freight: Optional[float] = None
-    valid_from: Optional[date] = None
-    valid_to: Optional[date] = None
+    origin: str | None = None
+    destination: str | None = None
+    mode: str | None = "sea"
+    carrier: str | None = None
+    equipment: str | None = None
+    qty: int | None = 1
+    currency: str | None = None
+    rate_per_unit: float | None = None
+    total_freight: float | None = None
+    valid_from: date | None = None
+    valid_to: date | None = None
     confidence: float = 0.0
-    raw_cells: Optional[Any] = None
+    raw_cells: Any | None = None
 
 class FreightItem(FreightItemIn):
     id: int
 
 class ShipmentRequestCreate(BaseModel):
     source_asset_id: int
-    items: List[FreightItemIn] = Field(default_factory=list)
-    meta: Optional[Any] = None
+    items: list[FreightItemIn] = Field(default_factory=list)
+    meta: Any | None = None
 
 class ShipmentRequestOut(BaseModel):
     id: int
     source_asset_id: int | None = None
     status: str
-    meta: Optional[Any] = None
-    items: List[FreightItem]
+    meta: Any | None = None
+    items: list[FreightItem]

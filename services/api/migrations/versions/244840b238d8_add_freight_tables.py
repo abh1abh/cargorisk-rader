@@ -5,21 +5,18 @@ Revises: dd07e2692202
 Create Date: 2025-10-22 08:53:22.568839
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import inspect, text
+from alembic import op
+from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import JSONB
-
-
-
 
 # revision identifiers, used by Alembic.
 revision: str = '244840b238d8'
-down_revision: Union[str, Sequence[str], None] = 'dd07e2692202'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = 'dd07e2692202'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def _has_table(bind, name):

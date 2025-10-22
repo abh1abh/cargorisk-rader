@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger
 from ..core.metrics import timed
+from ..domain.exceptions import NotFound, ProcessingError, S3Unavailable
+from ..domain.ports import BlobStore, EmbeddingModelPort, OcrPort
 from ..models import MediaAsset
 from ..schemas.document import DocumentOut, DocumentTextOut, OcrRunOut
-from ..domain.exceptions import NotFound, ProcessingError, S3Unavailable
-from ..domain.ports import EmbeddingModelPort, OcrPort, BlobStore
 
 log = get_logger("svc.document")
 
+# TODO: Create DB repo for document
 
 @dataclass(slots=True)
 class DocumentService:

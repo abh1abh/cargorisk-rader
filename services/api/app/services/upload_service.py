@@ -7,12 +7,12 @@ from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger, request_id_ctx
 from ..core.metrics import timed
-from ..models import MediaAsset
 from ..domain.ports import BlobStore
+from ..models import MediaAsset
 
 log = get_logger("svc.upload")
 
-
+# TODO: Create DB repo for upload
 class UploadService:
     def __init__(self, bucket: str, s3: BlobStore, max_bytes: int, allowed_mime: Iterable[str], celery_app: Celery):
         self.s3 = s3

@@ -1,8 +1,18 @@
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, JSON as JSON_, Column, DateTime, Integer, String, ForeignKey, Numeric, Date, Float
-from sqlalchemy.sql import func
+from sqlalchemy import (
+    JSON,
+    JSON as JSON_,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+)
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import func
 
 from .core.db import Base
 

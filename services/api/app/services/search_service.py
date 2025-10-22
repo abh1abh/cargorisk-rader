@@ -1,4 +1,3 @@
-import code
 from dataclasses import dataclass
 
 from pgvector.psycopg import Vector as PgVector
@@ -7,11 +6,12 @@ from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger
 from ..core.metrics import timed
+from ..domain.exceptions import ProcessingError
 from ..domain.ports import EmbeddingModelPort
-from ..domain.exceptions import BadRequest, ProcessingError
 
 log = get_logger("svc.search")
 
+# TODO: Create DB repo for search
 @dataclass(slots=True)
 class SearchService:
     embedder: EmbeddingModelPort
@@ -81,7 +81,7 @@ class SearchService:
         try:
             with db.begin():
                 # set ivfflat.probes for this transaction
-                db.execute(text(f"SET LOCAL statement_timeout = '5s'"))
+                db.execute(text("SET LOCAL statement_timeout = '5s'"))
                 db.execute(text(f"SET LOCAL ivfflat.probes = {probes}"))
 
                 rows = db.execute(sql, params).mappings().all()

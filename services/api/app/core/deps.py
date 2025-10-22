@@ -3,15 +3,16 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..services.document_service import DocumentService
+from ..domain.ports import BlobStore, EmbeddingModelPort, OcrPort
 from ..infra.embedding_model import EmbeddingModel
 from ..infra.ocr_engine import OcrEngine
 from ..infra.s3_blob_store import S3BlobStore
+from ..services.document_service import DocumentService
+
 # from ..services.ocr_service import OCRService
 # from ..services.s3_service import S3Service
 from ..services.search_service import SearchService
 from ..services.upload_service import UploadService
-from ..domain.ports import EmbeddingModelPort, OcrPort, BlobStore
 from .celery import get_celery
 from .config import Settings, get_settings
 from .db import SessionLocal

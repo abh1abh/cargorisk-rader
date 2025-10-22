@@ -7,7 +7,8 @@ import httpx
 import pytest
 from openpyxl import Workbook
 
-from services.api.app.services.embedding_service import EmbeddingService
+from services.api.app.domain.ports import EmbeddingModelPort
+from services.api.app.infra.embedding_model import EmbeddingModel
 
 BASE = os.getenv("BASE", "http://localhost:8000")
 
@@ -71,5 +72,5 @@ def ensure_seed(wait_for_api):
 
 
 @pytest.fixture(scope="session")
-def embedding_service() -> EmbeddingService:
-    return EmbeddingService()
+def embedding_model() -> EmbeddingModelPort:
+    return EmbeddingModel()
