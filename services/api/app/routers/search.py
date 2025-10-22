@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..core.deps import SearchServiceDependency, get_db
 from ..core.logging import get_logger
-from ..services.search_service import BadRequest, ProcessingError
+from ..domain.exceptions import BadRequest, ProcessingError
 
 log = get_logger("api.search")
 
