@@ -1,5 +1,6 @@
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 from celery import Celery, chain
 from sqlalchemy.exc import IntegrityError
@@ -7,19 +8,19 @@ from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger, request_id_ctx
 from ..core.metrics import timed
-from ..domain.ports import BlobStore
+from ..domain.ports import BlobStore, MediaAssetRepo
 from ..models import MediaAsset
 
 log = get_logger("svc.upload")
 
-# TODO: Create DB repo for upload
+@dataclass(slots=True)
 class UploadService:
-    def __init__(self, bucket: str, s3: BlobStore, max_bytes: int, allowed_mime: Iterable[str], celery_app: Celery):
-        self.s3 = s3
-        self.bucket = bucket
-        self.max_bytes = max_bytes
-        self.allowed_mime = set(allowed_mime)
-        self.celery_app = celery_app
+    s3: BlobStore
+    bucket: str
+    max_bytes:int
+    allowed_mime: Iterable[str]
+    celery_app: Celery
+    media_asset_repo: MediaAssetRepo
 
     # Public methods
     async def upload(self, db: Session, file) -> dict:
@@ -52,7 +53,7 @@ class UploadService:
                 storage_uri=f"s3://{self.bucket}/{key}",
                 sha256=digest,
             )
-            db.add(asset)
+            self.media_asset_repo.create(db, asset)
             db.commit()
             db.refresh(asset)
             row_created = True

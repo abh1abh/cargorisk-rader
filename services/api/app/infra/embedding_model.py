@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import threading
 
 import numpy as np
@@ -5,13 +6,13 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 
+@dataclass(slots=True)
 class EmbeddingModel:
-    def __init__(self, model: str = "sentence-transformers/all-MiniLM-L6-v2", device: str = "auto", embed_dim: int = 384) -> None:
-        self.model = model
-        self.device = self._resolve_device(device)
-        self.embed_dim = embed_dim
-        self._model: SentenceTransformer | None = None
-        self._model_lock = threading.Lock()
+    model: str  = "sentence-transformers/all-MiniLM-L6-v2"
+    device: str = "auto"
+    embed_dim: int = 384
+    _model: SentenceTransformer | None = None
+    _model_lock = threading.Lock()
     
     # Internal
     def _resolve_device(self, device: str) -> str:

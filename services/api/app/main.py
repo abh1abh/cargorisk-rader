@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
-
+# import asyncio
+# from anyio import to_thread
 import boto3
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,23 +8,34 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .core.config import Settings, get_settings
-from .core.deps import _s3_singleton, get_db, get_embedding_service, get_ocr_service
+from .core.deps import get_db #, _s3_singleton, get_embedding_model, get_ocr_service
 from .core.http_logging import http_logging_middleware
 from .core.logging import setup_logging
 from .routers import document, job, search, upload
 
 setup_logging()  # before creating app/logging
 
+# _WARMED_UP = asyncio.Event()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Warm heavy singletons (safe to call cached providers)
-    get_embedding_service()  # triggers model load once
-    _s3_singleton()
-    get_ocr_service()
-    yield
+# async def _warm_heavy_singletons():
+#     try:
+#         await asyncio.gather(
+#             to_thread.run_sync(get_embedding_model),  # blocking
+#             to_thread.run_sync(_s3_singleton),        # blocking
+#             to_thread.run_sync(get_ocr_service),      # blocking
+#         )
+#     finally:
+#         _WARMED_UP.set()  # set even if partial failures; or set only on success
 
-app = FastAPI(lifespan=lifespan)
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     asyncio.create_task(_warm_heavy_singletons())  # don’t block startup
+#     yield
+
+
+# app = FastAPI(lifespan=lifespan)
+app = FastAPI()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,9 +49,13 @@ app.middleware("http")(http_logging_middleware)
 
 
 # TODO: Move to route 
-@app.get("/health")
-def health(settings: Settings = Depends(get_settings)):
-    return {"status": "ok", "bucket": settings.s3_bucket}
+@app.get("/live")
+def live():
+    return {"status": "up"}
+
+# @app.get("/ready")
+# async def ready():
+#     return {"status": "ok" if _WARMED_UP.is_set() else "warming"}
 
 @app.get("/health/db")
 def health_db(db: Session = Depends(get_db)):
@@ -64,6 +80,7 @@ def health_s3(settings: Settings = Depends(get_settings)):
 
 
 app.include_router(upload.router)
+
 app.include_router(job.router)
 
 app.include_router(document.router)

@@ -10,35 +10,34 @@ from sqlalchemy.orm import Session
 from ..core.logging import get_logger
 from ..core.metrics import timed
 from ..domain.exceptions import NotFound, ProcessingError, S3Unavailable
-from ..domain.ports import BlobStore, EmbeddingModelPort, OcrPort
+from ..domain.ports import BlobStore, EmbeddingModelPort, OcrPort, MediaAssetRepo
 from ..models import MediaAsset
 from ..schemas.document import DocumentOut, DocumentTextOut, OcrRunOut
 
 log = get_logger("svc.document")
-
-# TODO: Create DB repo for document
 
 @dataclass(slots=True)
 class DocumentService:
     ocr: OcrPort
     embedder: EmbeddingModelPort
     s3: BlobStore
+    media_asset_repo: MediaAssetRepo
     s3_public_base: str
     
     # Public 
     def get_document(self, db: Session, asset_id: int) -> DocumentOut:
-        m = self._get_asset(db, asset_id)
+        m = self.media_asset_repo.get(db, asset_id)
         return DocumentOut(
             id=m.id, type=m.type, storage_uri=m.storage_uri, has_text=bool(m.ocr_text)
         )
 
     def get_document_text(self, db: Session, asset_id: int) -> DocumentTextOut:
-        m = self._get_asset(db, asset_id)
+        m = self.media_asset_repo.get(db, asset_id)
         return DocumentTextOut(id=m.id, text=m.ocr_text or "")
     
     def run_ocr(self, db: Session, asset_id: int, lang: str | None) -> OcrRunOut:
         t = timed("ocr")
-        m = self._get_asset(db, asset_id)
+        m = self.media_asset_repo.get(db, asset_id)
 
         log.info("ocr_start", extra={"asset_id": asset_id, "mime": m.type})
         try:
@@ -74,7 +73,7 @@ class DocumentService:
             log.error("ocr_failed", extra={"asset_id": asset_id, "error": e})
             raise ProcessingError(f"OCR failed: {e}") from e
 
-        m.ocr_text = text
+        self.media_asset_repo.save_text(db, asset_id, text=text)
         db.commit()
 
         t({"asset_id": asset_id})
@@ -83,7 +82,7 @@ class DocumentService:
     
     def embed_document(self, db: Session, asset_id: int) -> dict:
         t = timed("embed")
-        m = self._get_asset(db, asset_id)
+        m = self.media_asset_repo.get(db, asset_id)
         text = m.ocr_text or ""
 
         try:
@@ -93,7 +92,7 @@ class DocumentService:
             raise ProcessingError(f"Embedding failed: {e}") from e
 
         # Use UPDATE to avoid loading large vector back into ORM if undesired
-        db.execute(update(MediaAsset).where(MediaAsset.id == asset_id).values(embedding=emb))
+        self.media_asset_repo.save_embedding(db, asset_id, emb=emb)
         db.commit()
 
         t({"asset_id": asset_id, "chars": len(text), "dim": len(emb)})
@@ -119,10 +118,3 @@ class DocumentService:
         url = url.replace("http://minio:9000", self.s3_public_base)
         return url
     
-    # Internal
-    @staticmethod
-    def _get_asset(db: Session, asset_id: int) -> MediaAsset:
-        m = db.get(MediaAsset, asset_id)
-        if not m:
-            raise NotFound("Not found")
-        return m
