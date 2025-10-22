@@ -7,7 +7,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 
 
-class S3Service:
+class S3BlobStore:
     def __init__(self, settings):
         # Path-style addressing is more MinIO-friendly
         access_key = settings.s3_access_key.get_secret_value()

@@ -1,6 +1,3 @@
-# services/api/app/services/ocr.py
-from __future__ import annotations
-
 import io
 
 import fitz  # PyMuPDF
@@ -9,7 +6,7 @@ from openpyxl import load_workbook
 from PIL import Image, ImageFilter, ImageOps
 
 
-class OCRService:
+class OcrEngine:
     """
     Wraps OCR-related operations:
       - PDF: prefer native text; fall back to rasterize+OCR for image-only pages

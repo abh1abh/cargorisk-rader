@@ -8,13 +8,13 @@ from sqlalchemy.orm import Session
 from ..core.logging import get_logger, request_id_ctx
 from ..core.metrics import timed
 from ..models import MediaAsset
-from .s3_service import S3Service
+from ..domain.ports import BlobStore
 
 log = get_logger("svc.upload")
 
 
 class UploadService:
-    def __init__(self, bucket: str, s3: S3Service, max_bytes: int, allowed_mime: Iterable[str], celery_app: Celery):
+    def __init__(self, bucket: str, s3: BlobStore, max_bytes: int, allowed_mime: Iterable[str], celery_app: Celery):
         self.s3 = s3
         self.bucket = bucket
         self.max_bytes = max_bytes
@@ -31,7 +31,7 @@ class UploadService:
 
         self._validate_file(size=size, content_type=content_type)
 
-        digest = S3Service.sha256_bytes(data)
+        digest = self.s3.sha256_bytes(data)
         key = f"{digest[:2]}/{digest}"
 
         # Write to S3 if missing

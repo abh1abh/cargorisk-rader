@@ -4,11 +4,14 @@ from typing import Annotated
 from fastapi import Depends
 
 from ..services.document_service import DocumentService
-from ..services.embedding_service import EmbeddingService
-from ..services.ocr_service import OCRService
-from ..services.s3_service import S3Service
+from ..infra.embedding_model import EmbeddingModel
+from ..infra.ocr_engine import OcrEngine
+from ..infra.s3_blob_store import S3BlobStore
+# from ..services.ocr_service import OCRService
+# from ..services.s3_service import S3Service
 from ..services.search_service import SearchService
 from ..services.upload_service import UploadService
+from ..domain.ports import EmbeddingModelPort, OcrPort, BlobStore
 from .celery import get_celery
 from .config import Settings, get_settings
 from .db import SessionLocal
@@ -22,29 +25,29 @@ def get_db():
         db.close()
 
 @lru_cache(maxsize=1)
-def _s3_singleton() -> S3Service:
-    return S3Service(get_settings())  # zero-arg, safe to cache
+def _s3_singleton() -> BlobStore:
+    return S3BlobStore(get_settings())  # zero-arg, safe to cache
 
-def provide_s3() -> S3Service:
+def provide_s3() -> BlobStore:
     return _s3_singleton()  # dependency-safe wrapper
-S3Dependency = Annotated[S3Service, Depends(provide_s3)]
+S3Dependency = Annotated[BlobStore, Depends(provide_s3)]
 
 def provide_default_bucket(settings: Settings = Depends(get_settings)) -> str: 
     return settings.s3_bucket
 
 @lru_cache(maxsize=1)
-def get_ocr_service() -> OCRService:
-    return OCRService()
-OCRDependency = Annotated[OCRService, Depends(get_ocr_service)]
+def get_ocr_service() -> OcrPort:
+    return OcrEngine()
+OCRDependency = Annotated[OcrPort, Depends(get_ocr_service)]
 
 @lru_cache(maxsize=1)
-def get_embedding_service() -> EmbeddingService:
+def get_embedding_service() -> EmbeddingModelPort:
     # Create one shared instance (lazy-loaded model)
-    return EmbeddingService()
-EmbeddingDependency = Annotated[EmbeddingService, Depends(get_embedding_service)]
+    return EmbeddingModel()
+EmbeddingDependency = Annotated[EmbeddingModelPort, Depends(get_embedding_service)]
 
 def provide_upload_service(
-    s3: S3Service = Depends(provide_s3), 
+    s3: BlobStore = Depends(provide_s3), 
     settings: Settings = Depends(get_settings), 
     celery_app = Depends(get_celery)
 ) -> UploadService:

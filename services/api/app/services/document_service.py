@@ -11,34 +11,17 @@ from ..core.logging import get_logger
 from ..core.metrics import timed
 from ..models import MediaAsset
 from ..schemas.document import DocumentOut, DocumentTextOut, OcrRunOut
-from ..services.embedding_service import EmbeddingService
-from ..services.ocr_service import OCRService
-from ..services.s3_service import S3Service
+from ..domain.exceptions import NotFound, ProcessingError, S3Unavailable
+from ..domain.ports import EmbeddingModelPort, OcrPort, BlobStore
 
 log = get_logger("svc.document")
 
 
-class NotFound(ValueError):
-    pass
-
-
-class BadRequest(ValueError):
-    pass
-
-
-class S3Unavailable(RuntimeError):
-    pass
-
-
-class ProcessingError(RuntimeError):
-    """Used for OCR/embedding failures resulting in 4xx-like 'unprocessable'."""
-
-
 @dataclass(slots=True)
 class DocumentService:
-    ocr: OCRService
-    embedder: EmbeddingService
-    s3: S3Service
+    ocr: OcrPort
+    embedder: EmbeddingModelPort
+    s3: BlobStore
     s3_public_base: str
     
     # Public 
@@ -116,24 +99,31 @@ class DocumentService:
         return {"id": m.id, "dim": len(emb)}
 
     def generate_download_url(self, db: Session, asset_id: int) -> str:
+        log.info("GENERATE URL")
         m = self._get_asset(db, asset_id)
         if not m.storage_uri:
             raise NotFound("Document not found")
-
+        log.info("1")
         bucket, key = self.s3.parse_s3_uri(m.storage_uri)
         try:
+            log.info("2")
+            
             url = self.s3.generate_presigned_url(
                 "get_object",
                 params={"Bucket": bucket, "Key": key},
                 expires_in=600,
             )
         except Exception as e:
+            log.info("2")
+
             log.error("presign_failed", extra={"asset_id": asset_id, "error": e})
             # Infrastructure-ish failure
             raise RuntimeError(str(e)) from e
 
         # Normalize to public base if needed
+        log.info(" BEFORE URL", extra={"URL": url})
         url = url.replace("http://minio:9000", self.s3_public_base)
+        log.info("AFTER URL", extra={"URL": url})
         return url
     
 

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..core.deps import DocumentServiceDependency, get_db
 from ..core.logging import get_logger
 from ..schemas.document import DocumentOut, DocumentTextOut, OcrRunOut
-from ..services.document_service import BadRequest, NotFound, ProcessingError, S3Unavailable
+from ..domain.exceptions import BadRequest, NotFound, ProcessingError, S3Unavailable
 
 router = APIRouter(prefix="/document", tags=["document"])
 
@@ -90,6 +90,7 @@ def download_original(
     db: Session = Depends(get_db),
 ):
     try:
+        print("TEST")
         url = document_service.generate_download_url(db=db, asset_id=asset_id)
     except NotFound as e:
         raise HTTPException(status_code=404, detail="Document not found") from e

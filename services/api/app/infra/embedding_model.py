@@ -5,7 +5,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 
-class EmbeddingService:
+class EmbeddingModel:
     def __init__(self, model: str = "sentence-transformers/all-MiniLM-L6-v2", device: str = "auto", embed_dim: int = 384) -> None:
         self.model = model
         self.device = self._resolve_device(device)

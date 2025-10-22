@@ -7,21 +7,14 @@ from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger
 from ..core.metrics import timed
-from ..services.embedding_service import EmbeddingService
+from ..domain.ports import EmbeddingModelPort
+from ..domain.exceptions import BadRequest, ProcessingError
 
 log = get_logger("svc.search")
 
-class BadRequest(ValueError):
-    pass
-
-
-class ProcessingError(RuntimeError):
-    pass
-
-
 @dataclass(slots=True)
 class SearchService:
-    embedder: EmbeddingService
+    embedder: EmbeddingModelPort
     embed_dim: int | None = 384 # keep in sync with your model
     ivfflat_probes: int = 20  # number of probes for ivfflat index scan
 
