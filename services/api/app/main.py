@@ -48,8 +48,8 @@ app.middleware("http")(http_logging_middleware)
 
 
 # TODO: Move to route 
-@app.get("/live")
-def live():
+@app.get("/health")
+def health():
     return {"status": "ok"}
 
 # @app.get("/ready")
