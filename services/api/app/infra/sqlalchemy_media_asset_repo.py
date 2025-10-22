@@ -14,7 +14,7 @@ class SqlAlchemyMediaAssetRepo(MediaAssetRepo):
 
     def save_text(self, db: Session, asset_id: int, text: str) -> None:
         asset = self.get(db, asset_id)
-        asset.text = text
+        asset.ocr_text = text
 
     def save_embedding(self, db: Session, asset_id: int, emb: list[float]) -> None:
         asset = self.get(db, asset_id)

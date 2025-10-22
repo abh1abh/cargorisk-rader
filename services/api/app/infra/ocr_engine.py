@@ -1,12 +1,13 @@
 import io
-from dataclasses import dataclass
 
 import fitz  # PyMuPDF
 import pytesseract
 from openpyxl import load_workbook
 from PIL import Image, ImageFilter, ImageOps
 
-"""
+
+class OcrEngine:
+    """
     Wraps OCR-related operations:
       - PDF: prefer native text; fall back to rasterize+OCR for image-only pages
       - Images: light denoise + contrast, then Tesseract
@@ -18,12 +19,12 @@ from PIL import Image, ImageFilter, ImageOps
       oem: Tesseract OCR Engine Mode (default 3: default)
       psm: Page segmentation mode (default 6: Assume a single uniform block of text)
     """
-@dataclass(slots=True)
-class OcrEngine:
-    lang: str = "eng+nor"
-    pdf_dpi: int = 200
-    oem: int = 3
-    psm: int = 6
+
+    def __init__(self, lang: str = "eng+nor", pdf_dpi: int = 200, oem: int = 3, psm: int = 6) -> None:
+        self.lang = lang
+        self.pdf_dpi = pdf_dpi
+        self._tesseract_config = f"--oem {oem} --psm {psm}"
+
 
     def pdf_bytes_to_text(self, pdf_bytes: bytes, lang: str | None = None) -> str:
         eff_lang = (lang or self.lang)

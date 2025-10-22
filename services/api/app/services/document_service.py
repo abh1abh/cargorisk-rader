@@ -97,7 +97,7 @@ class DocumentService:
         return {"id": m.id, "dim": len(emb)}
 
     def generate_download_url(self, db: Session, asset_id: int) -> str:
-        m = self._get_asset(db, asset_id)
+        m = self.media_asset_repo.get(db, asset_id)
         if not m.storage_uri:
             raise NotFound("Document not found")
         bucket, key = self.s3.parse_s3_uri(m.storage_uri)

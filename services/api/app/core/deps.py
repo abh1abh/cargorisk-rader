@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..domain.ports import BlobStore, EmbeddingModelPort, MediaAssetRepo, OcrPort
+from ..domain.ports import BlobStore, EmbeddingModelPort, MediaAssetRepo, OcrPort, MediaAssetRepo
 from ..infra.embedding_model import EmbeddingModel
 from ..infra.ocr_engine import OcrEngine
 from ..infra.s3_blob_store import S3BlobStore
@@ -54,9 +54,10 @@ MediaAssetRepoDependency = Annotated[MediaAssetRepo, Depends(get_media_asset_rep
 def provide_upload_service(
     s3: BlobStore = Depends(provide_s3), 
     settings: Settings = Depends(get_settings), 
-    celery_app = Depends(get_celery)
+    celery_app = Depends(get_celery),
+    media_asset_repo: MediaAssetRepo = Depends(get_media_asset_repo)
 ) -> UploadService:
-        return UploadService(bucket=settings.s3_bucket, s3=s3, max_bytes=settings.max_upload_bytes, allowed_mime=settings.allowed_mime, celery_app=celery_app)
+        return UploadService(bucket=settings.s3_bucket, s3=s3, max_bytes=settings.max_upload_bytes, allowed_mime=settings.allowed_mime, celery_app=celery_app, media_asset_repo=media_asset_repo)
 UploadServiceDependency = Annotated[UploadService, Depends(provide_upload_service)]
 
 @lru_cache(maxsize=1)
