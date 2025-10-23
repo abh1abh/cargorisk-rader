@@ -1,7 +1,10 @@
 import { api } from "@/lib/api";
 import { NextRequest, NextResponse } from "next/server";
 
-type EmbedResponse = { id: number; dim: number };
+interface EmbedResponse {
+  id: number;
+  dim: number;
+}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

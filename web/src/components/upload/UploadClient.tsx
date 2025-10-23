@@ -2,8 +2,6 @@
 import { UploadResponse } from "@/types";
 import { useRef, useState } from "react";
 
-// type UploadResponse = { id: string; sha256: string; uri: string };
-
 export default function UploadClient() {
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);

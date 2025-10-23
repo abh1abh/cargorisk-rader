@@ -1,5 +1,5 @@
 import { api, apiRedirectLocation } from "@/lib/api";
-import type { DocumentMeta, DocumentText } from "@/types";
+import { DocumentMeta, DocumentText } from "@/types";
 import OcrText from "@/components/document/OcrText";
 import { ReprocessButtons } from "@/components/document/ReprocessButtons";
 

@@ -1,5 +1,5 @@
 // lib/searchApi.ts
-import type { SearchResponse } from "@/types";
+import { SearchResponse } from "@/types";
 
 export const PAGE_SIZE = 20;
 

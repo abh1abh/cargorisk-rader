@@ -1,7 +1,10 @@
 import { api } from "@/lib/api";
 import { NextRequest, NextResponse } from "next/server";
 
-type OCRResponse = { id: number; orcLength: number };
+interface OCRResponse {
+  id: number;
+  orcLength: number;
+}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

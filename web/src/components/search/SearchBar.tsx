@@ -1,11 +1,11 @@
 import { Button } from "../ui/Button";
 
-type Props = {
+interface Props {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
   placeholder?: string;
-};
+}
 export default function SearchBar({ value, onChange, onSubmit, placeholder }: Props) {
   return (
     <div className="flex gap-2">

@@ -1,6 +1,8 @@
 "use client";
 
-type Props = { text: string };
+interface Props {
+  text: string;
+}
 
 // Client component to handle onClick + clipboard
 export default function OcrText({ text }: Props) {
