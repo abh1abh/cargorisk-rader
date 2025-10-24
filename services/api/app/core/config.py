@@ -38,6 +38,14 @@ class Settings(BaseSettings):
         alias="ALLOWED_MIME",
     )
 
+     # Hugging Face - Freight Extractor 
+    hf_base_url: str = Field(
+        default="https://router.huggingface.co/v1",
+        alias="HF_BASE_URL",
+    )
+    hf_api_key: str = Field(default="", alias="HF_API_KEY")
+    freight_extractor_mode: str = Field(default="hybrid", alias="FREIGHT_EXTRACTOR")  # llm|heuristic|hybrid
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

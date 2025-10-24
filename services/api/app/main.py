@@ -1,39 +1,47 @@
-# import asyncio
-# from anyio import to_thread
-import boto3
+import asyncio
+from contextlib import asynccontextmanager
+
+from anyio import to_thread
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .core.config import Settings, get_settings
-from .core.deps import get_db  #, _s3_singleton, get_embedding_model, get_ocr_service
+from .core.deps import _s3_singleton, get_db, get_embedding_model, get_ocr_service
 from .core.http_logging import http_logging_middleware
-from .core.logging import setup_logging
+from .core.logging import get_logger, setup_logging
+from .infra.llm_extractor_hf import HfQwenFreightExtractor
 from .routers import document, job, search, upload
+
+log = get_logger("entry")
+log.info("Starting api...")
 
 setup_logging()  # before creating app/logging
 
-# _WARMED_UP = asyncio.Event()
+_WARMED_UP = asyncio.Event()
 
-# async def _warm_heavy_singletons():
-#     try:
-#         await asyncio.gather(
-#             to_thread.run_sync(get_embedding_model),  # blocking
-#             to_thread.run_sync(_s3_singleton),        # blocking
-#             to_thread.run_sync(get_ocr_service),      # blocking
-#         )
-#     finally:
-#         _WARMED_UP.set()  # set even if partial failures; or set only on success
+async def _warm_heavy_singletons():
+    try:
+        await asyncio.gather(
+            to_thread.run_sync(get_embedding_model),  # blocking
+            to_thread.run_sync(_s3_singleton),        # blocking
+            to_thread.run_sync(get_ocr_service),      # blocking
+        )
+    finally:
+        _WARMED_UP.set()  # set even if partial failures; or set only on success
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     asyncio.create_task(_warm_heavy_singletons())  # don't block startup
-#     yield
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.warmup_task = asyncio.create_task(_warm_heavy_singletons())
+    yield
+    await app.state.warmup_task
 
 
-# app = FastAPI(lifespan=lifespan)
-app = FastAPI()
+
+
+app = FastAPI(lifespan=lifespan)
+# app = FastAPI()
 
 
 app.add_middleware(
@@ -52,9 +60,9 @@ app.middleware("http")(http_logging_middleware)
 def health():
     return {"status": "ok"}
 
-# @app.get("/ready")
-# async def ready():
-#     return {"status": "ok" if _WARMED_UP.is_set() else "warming"}
+@app.get("/ready")
+async def ready():
+    return {"status": "ok" if _WARMED_UP.is_set() else "warming"}
 
 @app.get("/health/db")
 def health_db(db: Session = Depends(get_db)):
@@ -67,15 +75,13 @@ def health_db(db: Session = Depends(get_db)):
         "count": len(results),
     }
 
-@app.get("/health/s3")
-def health_s3(settings: Settings = Depends(get_settings)):
-    s3 = boto3.client("s3",
-        endpoint_url=settings.s3_endpoint,
-        aws_access_key_id=settings.s3_access_key,
-        aws_secret_access_key=settings.s3_secret_key
-    )
-    buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
-    return {"s3": "ok", "buckets": buckets}
+@app.get("/testmodel/{asset_id}")
+def test_model( asset_id: int, settings: Settings = Depends(get_settings), db: Session = Depends(get_db),):
+    
+    # asset = db.get(MediaAsset, asset_id)
+    model = HfQwenFreightExtractor(api_key=settings.hf_api_key, base_url=settings.hf_base_url)
+    r = model.test()
+    return r
 
 
 app.include_router(upload.router)
